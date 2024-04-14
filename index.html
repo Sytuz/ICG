@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<!--
+
+		ICG Project 2024 - Night City
+        Alexandre Ribeiro
+
+-->
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title> Night City </title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Online imports -->
+    <!-- <script type="importmap">
+        {
+          "imports": {
+            "three": "https://threejs.org/build/three.module.js",
+            "three/addons/": "https://threejs.org/examples/jsm/"
+          }
+        }
+    </script> -->
+
+    <!-- Local imports -->
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "./imports/three.module.js",
+            "three/addons/": "./imports/addons/"
+          }
+        }
+    </script>
+
+    <script type="module">
+
+        import * as THREE from "three";
+
+        import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+        import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+        import { VOXLoader, VOXMesh } from 'three/addons/loaders/VOXLoader.js';
+
+        // To store the scene graph, and elements useful to rendering the scene
+        const sceneElements = {
+            sceneGraph: null,
+            camera: null,
+            control: null,
+            renderer: null,
+        };
+
+        // HELPER FUNCTIONS
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        const helper = {
+
+            initEmptyScene: function (sceneElements) {
+
+                // ************************** //
+                // Create the 3D scene
+                // ************************** //
+                sceneElements.sceneGraph = new THREE.Scene();
+
+                // ************************** //
+                // Add camera
+                // ************************** //
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 500);
+                sceneElements.camera = camera;
+                camera.position.set(0, 5, 5);
+                camera.lookAt(0, 0, 0);
+
+                // ************************** //
+                // Illumination
+                // ************************** //
+
+                // ************************** //
+                // Add ambient light
+                // ************************** //
+                const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.2);
+                sceneElements.sceneGraph.add(ambientLight);
+
+                // ***************************** //
+                // Add point light souce (with shadows)
+                // ***************************** //
+                const light_1 = new THREE.PointLight('rgb(255, 255, 255)', 100);
+                light_1.decay = 1;
+                light_1.position.set(10, 10, 2);
+                sceneElements.sceneGraph.add(light_1);
+
+                // Setup shadow properties for the spotlight
+                light_1.castShadow = true;
+                light_1.shadow.mapSize.width = 2048;
+                light_1.shadow.mapSize.height = 2048;
+
+                // Give a name to the spot light
+                light_1.name = "light 1";
+
+                // *********************************** //
+                // Create renderer (with shadow map)
+                // *********************************** //
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                sceneElements.renderer = renderer;
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setClearColor('rgb(255, 255, 150)', 1.0);
+                renderer.setSize(width, height);
+
+                // Setup shadowMap property
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                // **************************************** //
+                // Add the rendered image in the HTML DOM
+                // **************************************** //
+                const htmlElement = document.querySelector("#Tag3DScene");
+                htmlElement.appendChild(renderer.domElement);
+
+                // ************************** //
+                // NEW --- Control for the camera
+                // ************************** //
+                sceneElements.control = new OrbitControls(camera, renderer.domElement);
+                sceneElements.control.screenSpacePanning = true;
+                sceneElements.control.target.set(0, 0, 0);
+                sceneElements.control.update();
+
+            },
+
+            render: function (sceneElements) {
+                sceneElements.renderer.render(sceneElements.sceneGraph, sceneElements.camera);
+            },
+        };
+
+        // FUCNTIONS FOR BUILDING THE SCENE
+
+        const scene = {
+
+            // Create and insert in the scene graph the models of the 3D scene
+
+            load3DObjects: function (sceneGraph) {
+
+                // ************************** //
+                // Setting up a loading manager
+                // ************************** //
+
+                const manager = new THREE.LoadingManager();
+                manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
+                    console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+                };
+
+                manager.onLoad = function ( ) {
+                    console.log( 'Loading complete!');
+                };
+
+                manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+                    console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+                };
+
+                manager.onError = function ( url ) {
+                    console.log( 'There was an error loading ' + url );
+                };
+
+                // ************************** //
+                // Load a OBJ model
+                // ************************** //
+
+                const mtlLoader = new MTLLoader( manager );
+
+                var vertices = 0;
+                var triangles = 0;
+
+                mtlLoader.load(
+                    'models/monu2/monu2.mtl',
+                    (materials) => {
+                        materials.preload()
+                        console.log(materials)
+                        const objLoader = new OBJLoader()
+                        objLoader.setMaterials(materials)
+                        objLoader.load(
+                            'models/monu2/monu2_imp.obj',
+                            (object) => {
+                                if ( object.isMesh ) {
+                                    const geometry = object.geometry;
+                                    vertices += geometry.attributes.position.count;
+                                    if ( geometry.index !== null ) {
+                                        triangles += geometry.index.count / 3;
+                                    } else {
+                                        triangles += geometry.attributes.position.count / 3;
+                                    }
+                                }
+                                sceneGraph.add(object)
+                            },
+                            (xhr) => {
+                                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+                            },
+                            (error) => {
+                                console.log('An error happened')
+                            }
+                        )
+                    },
+                    (xhr) => {
+                        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+                    },
+                    (error) => {
+                        console.log('An error happened')
+                    }
+                )
+
+                console.log('Vertices: ' + vertices)
+                console.log('Triangles: ' + triangles)
+
+                // ************************** //
+                // Load a VOX model
+                // ************************** //
+
+                /* const loader = new VOXLoader();
+				loader.load( 'models/monu2/monu2.vox', function ( chunks ) {
+
+					for ( let i = 0; i < chunks.length; i ++ ) {
+
+						const chunk = chunks[ i ];
+
+						// displayPalette( chunk.palette );
+
+						const mesh = new VOXMesh( chunk );
+                        mesh.wireframe
+						mesh.scale.setScalar( 0.0015 );
+						sceneGraph.add( mesh );
+
+					}
+
+				} ); */
+
+                // ************************** //
+                // Create a sphere
+                // ************************** //
+                // Sphere center is at (0,0,0)
+                /* const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+                const sphereMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(200,200,200)' });
+                const sphereObject = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphereObject.name = "sphere_1";
+                sceneGraph.add(sphereObject); */
+
+            }
+        };
+
+        // ANIMATION
+
+        // Displacement values
+        var delta = 0.1;
+
+        //To keep track of the keyboard - WASD
+        var keyD = false, keyA = false, keyS = false, keyW = false;
+
+        function computeFrame(time) {
+
+            // Can extract an object from the scene Graph from its name
+            const light_1 = sceneElements.sceneGraph.getObjectByName("light 1");
+
+            // COMPLETE THE CODE
+
+
+            // Rendering
+            //helper.render(sceneElements);
+
+            // Animation
+            //Call for the next frame
+            requestAnimationFrame(computeFrame);
+        }
+
+        // Call functions:
+        //  1. Initialize the empty scene
+        //  2. Add elements within the scene
+        //  3. Animate
+
+        function init() {
+            helper.initEmptyScene(sceneElements);
+            scene.load3DObjects(sceneElements.sceneGraph);
+            sleep(1000).then(() => {
+                helper.render(sceneElements);
+                sceneElements.control.addEventListener('change', () => {
+                    helper.render(sceneElements);
+                });
+            });
+            //requestAnimationFrame(computeFrame);
+        }
+
+        // HANDLING EVENTS
+
+        // Event Listeners
+
+        window.addEventListener('resize', resizeWindow);
+
+        document.addEventListener('keydown', onDocumentKeyDown, false);
+        document.addEventListener('keyup', onDocumentKeyUp, false);
+
+        // Update render image size and camera aspect when the window is resized
+        function resizeWindow(eventParam) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            sceneElements.camera.aspect = width / height;
+            sceneElements.camera.updateProjectionMatrix();
+
+            sceneElements.renderer.setSize(width, height);
+
+            helper.render(sceneElements);
+
+            // Comment when doing animation
+            // computeFrame(sceneElements);
+        }
+
+        function onDocumentKeyDown(event) {
+            switch (event.keyCode) {
+                case 68: //d
+                    keyD = true;
+                    break;
+                case 83: //s
+                    keyS = true;
+                    break;
+                case 65: //a
+                    keyA = true;
+                    break;
+                case 87: //w
+                    keyW = true;
+                    break;
+            }
+        }
+
+        function onDocumentKeyUp(event) {
+            switch (event.keyCode) {
+                case 68: //d
+                    keyD = false;
+                    break;
+                case 83: //s
+                    keyS = false;
+                    break;
+                case 65: //a
+                    keyA = false;
+                    break;
+                case 87: //w
+                    keyW = false;
+                    break;
+            }
+        }
+
+
+        // STARTING
+
+        init();
+
+    </script>
+
+</head>
+
+<body>
+    <div id="Tag3DScene"> </div>
+</body>
+
+</html>
