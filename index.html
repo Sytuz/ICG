@@ -43,7 +43,6 @@
         import { OrbitControls } from "three/addons/controls/OrbitControls.js";
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
-        import { VOXLoader, VOXMesh } from 'three/addons/loaders/VOXLoader.js';
 
         // To store the scene graph, and elements useful to rendering the scene
         const sceneElements = {
@@ -104,15 +103,30 @@
                 // Give a name to the spot light
                 light_1.name = "light 1";
 
+                 // *********************************** //
+                // Add skybox
+                // *********************************** //
+
+                const loader = new THREE.CubeTextureLoader();
+                loader.setPath( 'models/Skybox/' );
+
+                const textureCube = loader.load([
+                'px.png', 'nx.png',
+                'py.png', 'ny.png',
+                'nz.png', 'pz.png'
+                ]);
+
+                sceneElements.sceneGraph.background = textureCube;
+
                 // *********************************** //
                 // Create renderer (with shadow map)
                 // *********************************** //
                 const renderer = new THREE.WebGLRenderer({ antialias: true });
                 sceneElements.renderer = renderer;
                 renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setClearColor('rgb(255, 255, 150)', 1.0);
                 renderer.setSize(width, height);
 
+               
                 // Setup shadowMap property
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -173,9 +187,6 @@
 
                 const mtlLoader = new MTLLoader( manager );
 
-                var vertices = 0;
-                var triangles = 0;
-
                 mtlLoader.load(
                     'models/monu2/monu2.mtl',
                     (materials) => {
@@ -186,15 +197,6 @@
                         objLoader.load(
                             'models/monu2/monu2_imp.obj',
                             (object) => {
-                                if ( object.isMesh ) {
-                                    const geometry = object.geometry;
-                                    vertices += geometry.attributes.position.count;
-                                    if ( geometry.index !== null ) {
-                                        triangles += geometry.index.count / 3;
-                                    } else {
-                                        triangles += geometry.attributes.position.count / 3;
-                                    }
-                                }
                                 sceneGraph.add(object)
                             },
                             (xhr) => {
@@ -213,41 +215,6 @@
                     }
                 )
 
-                console.log('Vertices: ' + vertices)
-                console.log('Triangles: ' + triangles)
-
-                // ************************** //
-                // Load a VOX model
-                // ************************** //
-
-                /* const loader = new VOXLoader();
-				loader.load( 'models/monu2/monu2.vox', function ( chunks ) {
-
-					for ( let i = 0; i < chunks.length; i ++ ) {
-
-						const chunk = chunks[ i ];
-
-						// displayPalette( chunk.palette );
-
-						const mesh = new VOXMesh( chunk );
-                        mesh.wireframe
-						mesh.scale.setScalar( 0.0015 );
-						sceneGraph.add( mesh );
-
-					}
-
-				} ); */
-
-                // ************************** //
-                // Create a sphere
-                // ************************** //
-                // Sphere center is at (0,0,0)
-                /* const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-                const sphereMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(200,200,200)' });
-                const sphereObject = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                sphereObject.name = "sphere_1";
-                sceneGraph.add(sphereObject); */
-
             }
         };
 
@@ -262,7 +229,7 @@
         function computeFrame(time) {
 
             // Can extract an object from the scene Graph from its name
-            const light_1 = sceneElements.sceneGraph.getObjectByName("light 1");
+            //const light_1 = sceneElements.sceneGraph.getObjectByName("light 1");
 
             // COMPLETE THE CODE
 
