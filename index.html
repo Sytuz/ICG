@@ -41,6 +41,7 @@
         import * as THREE from "three";
 
         import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
@@ -50,6 +51,23 @@
             camera: null,
             control: null,
             renderer: null,
+        };
+
+        const cameras = {
+            perspective: null,
+            orthographic: null,
+            firstperson: null,
+        };
+
+        const controls = {
+            per: null,
+            ort: null,
+            fps: null,
+        };
+
+        const stands = {
+            cityTower: null,
+            cityPlane: null,
         };
 
         // HELPER FUNCTIONS
@@ -66,57 +84,108 @@
                 // Create the 3D scene
                 // ************************** //
                 sceneElements.sceneGraph = new THREE.Scene();
+                //sceneElements.sceneGraph.fog = new THREE.Fog( 0xffffff, 0, 750 );
+
 
                 // ************************** //
-                // Add camera
+                // Create the perspective camera and set it as the default camera
                 // ************************** //
                 const width = window.innerWidth;
                 const height = window.innerHeight;
-                const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 500);
-                sceneElements.camera = camera;
-                camera.position.set(0, 5, 5);
-                camera.lookAt(0, 0, 0);
+                const aspectRatio = width / height;
+                const perCamera = new THREE.PerspectiveCamera(45, aspectRatio, 0.1, 500);
+                cameras.perspective = perCamera;
+                sceneElements.camera = perCamera;
+                sceneElements.camera.position.set(15, 18, 15);
+                sceneElements.camera.lookAt(0, 5, 0);
+
 
                 // ************************** //
-                // Illumination
+                // Create the orthographic camera
                 // ************************** //
+                const d = 80;
+                const ortCamera = new THREE.OrthographicCamera(width / -d, width / d, height / d, height / -d, 0.5, 1000);
+                cameras.orthographic = ortCamera;
+                ortCamera.position.set(15, 18, 15);
+                ortCamera.lookAt(0, 5, 0);
+
+
+                // ************************** //
+                // Create the first person camera
+                // ************************** //
+                const fpsCamera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 1000);
+                fpsCamera.position.set(0, 10, 0);
+                cameras.firstperson = fpsCamera;
+
+
+                // -------------------------- //
+                // Illumination
+                // -------------------------- //
 
                 // ************************** //
                 // Add ambient light
                 // ************************** //
-                const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.2);
+                const ambientLight = new THREE.AmbientLight('rgb(214, 220, 227)', 0.05);
                 sceneElements.sceneGraph.add(ambientLight);
+
+
+                // ************************** //
+                // Add directional light (with shadows), to simulate the moon light
+                // ************************** //
+
+                //const moonlight = new THREE.DirectionalLight('rgb(255, 255, 255)', 0.3);
+                //moonlight.position.set( 100, 100, 0 );
+                //moonlight.castShadow = true;
+
+                //Set up shadow properties for the light
+
+                //const b = 20;
+
+                //moonlight.shadow.camera.left = - b;
+                //moonlight.shadow.camera.right = b;
+                //moonlight.shadow.camera.top = b;
+                //moonlight.shadow.camera.bottom = - b;
+
+                //moonlight.shadow.mapSize.width = 2048;
+                //moonlight.shadow.mapSize.height = 2048;
+                //moonlight.shadow.camera.near = 130; // default
+                //moonlight.shadow.camera.far = 150; // default
+
+                //sceneElements.sceneGraph.add(moonlight);
+                //sceneElements.sceneGraph.add( new THREE.CameraHelper( moonlight.shadow.camera ) );
+
 
                 // ***************************** //
                 // Add point light souce (with shadows)
                 // ***************************** //
-                const light_1 = new THREE.PointLight('rgb(255, 255, 255)', 100);
+                const light_1 = new THREE.PointLight('rgb(255, 255, 255)', 19);
                 light_1.decay = 1;
                 light_1.position.set(10, 10, 2);
                 sceneElements.sceneGraph.add(light_1);
 
-                // Setup shadow properties for the spotlight
+                // Setup shadow properties for the point light
                 light_1.castShadow = true;
                 light_1.shadow.mapSize.width = 2048;
                 light_1.shadow.mapSize.height = 2048;
 
-                // Give a name to the spot light
+                // Give a name to the light
                 light_1.name = "light 1";
 
-                 // *********************************** //
+
+                // *********************************** //
                 // Add skybox
                 // *********************************** //
-
                 const loader = new THREE.CubeTextureLoader();
                 loader.setPath( 'models/Skybox/' );
 
                 const textureCube = loader.load([
                 'px.png', 'nx.png',
-                'py.png', 'ny.png',
+                'ny.png', 'py.png',
                 'nz.png', 'pz.png'
                 ]);
 
                 sceneElements.sceneGraph.background = textureCube;
+
 
                 // *********************************** //
                 // Create renderer (with shadow map)
@@ -126,10 +195,10 @@
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(width, height);
 
-               
                 // Setup shadowMap property
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 
                 // **************************************** //
                 // Add the rendered image in the HTML DOM
@@ -137,13 +206,37 @@
                 const htmlElement = document.querySelector("#Tag3DScene");
                 htmlElement.appendChild(renderer.domElement);
 
+
                 // ************************** //
-                // NEW --- Control for the camera
+                // Controls for the cameras
                 // ************************** //
-                sceneElements.control = new OrbitControls(camera, renderer.domElement);
-                sceneElements.control.screenSpacePanning = true;
-                sceneElements.control.target.set(0, 0, 0);
-                sceneElements.control.update();
+
+                // Perpective camera
+                controls.per = new OrbitControls(perCamera, renderer.domElement);
+                controls.per.screenSpacePanning = true;
+                controls.per.target.set(0, 5, 0);
+                controls.per.maxDistance = 100;
+                controls.per.saveState();
+                
+                controls.per.update();
+
+                sceneElements.control = controls.per;
+
+                // Orthographic camera
+                controls.ort = new OrbitControls(ortCamera, renderer.domElement);
+                controls.ort.screenSpacePanning = true;
+                controls.ort.target.set(0, 5, 0);
+                controls.ort.maxDistance = 100;
+                controls.ort.saveState();
+
+                controls.ort.update();
+
+                // First Person camera
+                
+                controls.fps = new PointerLockControls(fpsCamera, renderer.domElement);
+                controls.fps.disconnect();
+                sceneElements.sceneGraph.add(controls.fps.getObject());
+                console.log(controls.fps.getObject());
 
             },
 
@@ -161,9 +254,31 @@
             load3DObjects: function (sceneGraph) {
 
                 // ************************** //
+                // Create the city stand (long box)
+                // ************************** //
+                const towerGeometry = new THREE.BoxGeometry(10, 1000, 10);
+                const towerMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(30,0,40)' });
+                const cityTower = new THREE.Mesh(towerGeometry, towerMaterial);
+                cityTower.position.set(0, -500, 0);
+                cityTower.name = "cityTower";
+                stands.cityTower = cityTower;
+
+                sceneGraph.add(cityTower);
+
+                // ************************** //
+                // Create the orthogonal city stand (long plane)
+                // ************************** //
+                const planeGeometry = new THREE.BoxGeometry(100, 1, 100);
+                const planeMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(255,255,255)' });
+                const cityPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+                cityPlane.position.set(0, -0.5, 0);
+                cityPlane.receiveShadow = true;
+                cityPlane.name = "cityPlane";
+                stands.cityPlane = cityPlane;
+
+                // ************************** //
                 // Setting up a loading manager
                 // ************************** //
-
                 const manager = new THREE.LoadingManager();
                 manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
                     console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
@@ -184,7 +299,6 @@
                 // ************************** //
                 // Load a OBJ model
                 // ************************** //
-
                 const mtlLoader = new MTLLoader( manager );
 
                 mtlLoader.load(
@@ -197,10 +311,20 @@
                         objLoader.load(
                             'models/monu2/monu2_imp.obj',
                             (object) => {
-                                sceneGraph.add(object)
+                                object.traverse((child) => {
+                                    if (child instanceof THREE.Mesh) {
+                                        child.castShadow = true;
+                                        child.receiveShadow = true;
+                                    }
+                                });
+                                object.receiveShadow = true;
+                                object.castShadow = true;
+                                object.name = "monu2";
+                                console.log(object);
+                                sceneGraph.add(object);
                             },
                             (xhr) => {
-                                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+                                console.log((xhr.loaded / xhr.total) * 43333333330 + '% loaded')
                             },
                             (error) => {
                                 console.log('An error happened')
@@ -220,43 +344,100 @@
 
         // ANIMATION
 
+        let raycaster;
+
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let canJump = false;
+
+        let prevTime = performance.now();
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        const vertex = new THREE.Vector3();
+        const color = new THREE.Color();
+        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 0.5 );
+
+
         // Displacement values
         var delta = 0.1;
 
-        //To keep track of the keyboard - WASD
-        var keyD = false, keyA = false, keyS = false, keyW = false;
+        function computeFrame() {
 
-        function computeFrame(time) {
+            const time = performance.now();
+            
+            if ( controls.fps.isLocked === true ) {
+                console.log(controls.fps.isLocked);
+                raycaster.ray.origin.copy( controls.fps.getObject().position );
+                raycaster.ray.origin.y -= 0.5;
 
-            // Can extract an object from the scene Graph from its name
-            //const light_1 = sceneElements.sceneGraph.getObjectByName("light 1");
+                const obj = sceneElements.sceneGraph.getObjectByName("monu2");
+                
+                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph.getObjectByName("monu2").children, false );
+                console.log(intersections.length);
+                const onObject = intersections.length > 0;
 
-            // COMPLETE THE CODE
+                const delta = ( time - prevTime ) / 1000;
 
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+
+                velocity.y -= 9.8 * 5.0 * delta; // 100.0 = mass
+
+                direction.z = Number( moveForward ) - Number( moveBackward );
+                direction.x = Number( moveRight ) - Number( moveLeft );
+                direction.normalize(); // this ensures consistent movements in all directions
+
+                if ( moveForward || moveBackward ) velocity.z -= direction.z * 20.0 * delta;
+                if ( moveLeft || moveRight ) velocity.x -= direction.x * 20.0 * delta;
+
+                if ( onObject === true ) {
+
+                    velocity.y = Math.max( 0, velocity.y );
+                    canJump = true;
+
+                }
+
+                controls.fps.moveRight( - velocity.x * delta );
+                controls.fps.moveForward( - velocity.z * delta );
+
+                controls.fps.getObject().position.y += ( velocity.y * delta ); // new behavior
+
+                if ( controls.fps.getObject().position.y < 0.5 ) {
+
+                    velocity.y = 0;
+                    controls.fps.getObject().position.y = 0.5;
+
+                    canJump = true;
+
+                }
+
+            }
+
+            prevTime = time;
 
             // Rendering
-            //helper.render(sceneElements);
+            helper.render(sceneElements);
 
             // Animation
             //Call for the next frame
             requestAnimationFrame(computeFrame);
         }
 
-        // Call functions:
-        //  1. Initialize the empty scene
-        //  2. Add elements within the scene
-        //  3. Animate
-
         function init() {
             helper.initEmptyScene(sceneElements);
             scene.load3DObjects(sceneElements.sceneGraph);
-            sleep(1000).then(() => {
-                helper.render(sceneElements);
-                sceneElements.control.addEventListener('change', () => {
-                    helper.render(sceneElements);
-                });
-            });
-            //requestAnimationFrame(computeFrame);
+            //sleep(50).then(() => {
+            //    helper.render(sceneElements);
+            //    controls.per.addEventListener('change', () => {
+            //        helper.render(sceneElements);
+            //    });
+            //    controls.ort.addEventListener('change', () => {
+            //        helper.render(sceneElements);
+            //    });
+            //});
+            requestAnimationFrame(computeFrame);
         }
 
         // HANDLING EVENTS
@@ -264,9 +445,6 @@
         // Event Listeners
 
         window.addEventListener('resize', resizeWindow);
-
-        document.addEventListener('keydown', onDocumentKeyDown, false);
-        document.addEventListener('keyup', onDocumentKeyUp, false);
 
         // Update render image size and camera aspect when the window is resized
         function resizeWindow(eventParam) {
@@ -284,39 +462,97 @@
             // computeFrame(sceneElements);
         }
 
-        function onDocumentKeyDown(event) {
-            switch (event.keyCode) {
-                case 68: //d
-                    keyD = true;
-                    break;
-                case 83: //s
-                    keyS = true;
-                    break;
-                case 65: //a
-                    keyA = true;
-                    break;
-                case 87: //w
-                    keyW = true;
-                    break;
-            }
-        }
+        const onKeyDown = function ( event ) {
 
-        function onDocumentKeyUp(event) {
-            switch (event.keyCode) {
-                case 68: //d
-                    keyD = false;
+            switch ( event.code ) {
+
+                case 'ArrowUp':
+                case 'KeyW':
+                    moveForward = true;
                     break;
-                case 83: //s
-                    keyS = false;
+
+                case 'ArrowLeft':
+                case 'KeyA':
+                    moveLeft = true;
                     break;
-                case 65: //a
-                    keyA = false;
+
+                case 'ArrowDown':
+                case 'KeyS':
+                    moveBackward = true;
                     break;
-                case 87: //w
-                    keyW = false;
+
+                case 'ArrowRight':
+                case 'KeyD':
+                    moveRight = true;
                     break;
+
+                case 'Space':
+                    if ( canJump === true ) velocity.y += 25;
+                    canJump = false;
+                    break;
+
+                case 'KeyR':
+                    controls.per.reset();
+                    controls.ort.reset();
+                    break;
+                
+                case 'KeyP':
+                    if (sceneElements.camera == cameras.perspective) {
+                        sceneElements.camera = cameras.orthographic;
+                        sceneElements.sceneGraph.remove(stands.cityTower);
+                        sceneElements.sceneGraph.add(stands.cityPlane);
+                    }
+                    else if (sceneElements.camera == cameras.orthographic) {
+                        sceneElements.camera = cameras.firstperson;
+                        sceneElements.sceneGraph.remove(stands.cityPlane);
+                        sceneElements.sceneGraph.add(stands.cityTower);
+                        controls.fps.connect(); controls.fps.lock();
+                        controls.per.enabled = false; controls.ort.enabled = false;
+                        console.log("First Person Camera");
+                    }
+                    else {
+                        controls.fps.disconnect(); controls.fps.unlock(); controls.fps.isLocked = false;
+                        controls.per.enabled = true; controls.ort.enabled = true;
+                        sceneElements.camera = cameras.perspective;
+                    }
+                    controls.ort.update();
+                    controls.per.update();
+                    break;
+
             }
-        }
+
+        };
+
+        const onKeyUp = function ( event ) {
+
+            switch ( event.code ) {
+
+                case 'ArrowUp':
+                case 'KeyW':
+                    moveForward = false;
+                    break;
+
+                case 'ArrowLeft':
+                case 'KeyA':
+                    moveLeft = false;
+                    break;
+
+                case 'ArrowDown':
+                case 'KeyS':
+                    moveBackward = false;
+                    break;
+
+                case 'ArrowRight':
+                case 'KeyD':
+                    moveRight = false;
+                    break;
+
+            }
+
+        };
+
+        document.addEventListener( 'keydown', onKeyDown );
+        document.addEventListener( 'keyup', onKeyUp );
 
 
         // STARTING
