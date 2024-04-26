@@ -16,16 +16,6 @@
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- Online imports -->
-    <!-- <script type="importmap">
-        {
-          "imports": {
-            "three": "https://threejs.org/build/three.module.js",
-            "three/addons/": "https://threejs.org/examples/jsm/"
-          }
-        }
-    </script> -->
-
     <!-- Local imports -->
     <script type="importmap">
         {
@@ -44,6 +34,7 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+        import { VOXLoader, VOXMesh } from 'three/addons/loaders/VOXLoader.js';
 
         // To store the scene graph, and elements useful to rendering the scene
         const sceneElements = {
@@ -70,10 +61,14 @@
             cityPlane: null,
         };
 
+        // Useful constants
+
+        const ortScale = 80 // Orthographic camera constant, to define the viewing box
+
         // HELPER FUNCTIONS
 
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+        function sleep( ms ) {
+            return new Promise( resolve => setTimeout(resolve, ms) );
         }
 
         const helper = {
@@ -93,28 +88,27 @@
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const aspectRatio = width / height;
-                const perCamera = new THREE.PerspectiveCamera(45, aspectRatio, 0.1, 500);
+                const perCamera = new THREE.PerspectiveCamera( 45, aspectRatio, 0.1, 500 );
                 cameras.perspective = perCamera;
                 sceneElements.camera = perCamera;
-                sceneElements.camera.position.set(15, 18, 15);
-                sceneElements.camera.lookAt(0, 5, 0);
+                sceneElements.camera.position.set( 15, 18, 15 );
+                sceneElements.camera.lookAt( 0, 5, 0 );
 
 
                 // ************************** //
                 // Create the orthographic camera
                 // ************************** //
-                const d = 80;
-                const ortCamera = new THREE.OrthographicCamera(width / -d, width / d, height / d, height / -d, 0.5, 1000);
+                const ortCamera = new THREE.OrthographicCamera( width / -ortScale, width / ortScale, height / ortScale, height / -ortScale, 0.5, 1000 );
                 cameras.orthographic = ortCamera;
-                ortCamera.position.set(15, 18, 15);
-                ortCamera.lookAt(0, 5, 0);
+                ortCamera.position.set( 15, 18, 15 );
+                ortCamera.lookAt( 0, 5, 0 );
 
 
                 // ************************** //
                 // Create the first person camera
                 // ************************** //
-                const fpsCamera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 1000);
-                fpsCamera.position.set(0, 10, 0);
+                const fpsCamera = new THREE.PerspectiveCamera( 75, aspectRatio, 0.1, 1000 );
+                fpsCamera.position.set( 0, 10, 0 );
                 cameras.firstperson = fpsCamera;
 
 
@@ -125,8 +119,8 @@
                 // ************************** //
                 // Add ambient light
                 // ************************** //
-                const ambientLight = new THREE.AmbientLight('rgb(214, 220, 227)', 0.05);
-                sceneElements.sceneGraph.add(ambientLight);
+                const ambientLight = new THREE.AmbientLight( 'rgb(214, 220, 227)', 0.05 );
+                sceneElements.sceneGraph.add( ambientLight );
 
 
                 // ************************** //
@@ -158,10 +152,10 @@
                 // ***************************** //
                 // Add point light souce (with shadows)
                 // ***************************** //
-                const light_1 = new THREE.PointLight('rgb(255, 255, 255)', 19);
+                const light_1 = new THREE.PointLight( 'rgb(255, 255, 255)', 19 );
                 light_1.decay = 1;
-                light_1.position.set(10, 10, 2);
-                sceneElements.sceneGraph.add(light_1);
+                light_1.position.set( 10, 10, 2 );
+                sceneElements.sceneGraph.add( light_1 );
 
                 // Setup shadow properties for the point light
                 light_1.castShadow = true;
@@ -187,13 +181,13 @@
                 sceneElements.sceneGraph.background = textureCube;
 
 
-                // *********************************** //
-                // Create renderer (with shadow map)
-                // *********************************** //
+                // -------------------------- //
+                // Renderer
+                // -------------------------- //
                 const renderer = new THREE.WebGLRenderer({ antialias: true });
                 sceneElements.renderer = renderer;
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setSize(width, height);
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( width, height );
 
                 // Setup shadowMap property
                 renderer.shadowMap.enabled = true;
@@ -203,16 +197,16 @@
                 // **************************************** //
                 // Add the rendered image in the HTML DOM
                 // **************************************** //
-                const htmlElement = document.querySelector("#Tag3DScene");
-                htmlElement.appendChild(renderer.domElement);
+                const htmlElement = document.querySelector( "#Tag3DScene" );
+                htmlElement.appendChild( renderer.domElement );
 
 
-                // ************************** //
-                // Controls for the cameras
-                // ************************** //
+                // -------------------------- //
+                // Camera controls
+                // -------------------------- //
 
                 // Perpective camera
-                controls.per = new OrbitControls(perCamera, renderer.domElement);
+                controls.per = new OrbitControls( perCamera, renderer.domElement );
                 controls.per.screenSpacePanning = true;
                 controls.per.target.set(0, 5, 0);
                 controls.per.maxDistance = 100;
@@ -223,9 +217,9 @@
                 sceneElements.control = controls.per;
 
                 // Orthographic camera
-                controls.ort = new OrbitControls(ortCamera, renderer.domElement);
+                controls.ort = new OrbitControls( ortCamera, renderer.domElement );
                 controls.ort.screenSpacePanning = true;
-                controls.ort.target.set(0, 5, 0);
+                controls.ort.target.set( 0, 5, 0 );
                 controls.ort.maxDistance = 100;
                 controls.ort.saveState();
 
@@ -233,45 +227,45 @@
 
                 // First Person camera
                 
-                controls.fps = new PointerLockControls(fpsCamera, renderer.domElement);
+                controls.fps = new PointerLockControls( fpsCamera, renderer.domElement );
                 controls.fps.disconnect();
-                sceneElements.sceneGraph.add(controls.fps.getObject());
+                sceneElements.sceneGraph.add( controls.fps.getObject() );
                 console.log(controls.fps.getObject());
 
             },
 
-            render: function (sceneElements) {
-                sceneElements.renderer.render(sceneElements.sceneGraph, sceneElements.camera);
+            render: function ( sceneElements ) {
+                sceneElements.renderer.render( sceneElements.sceneGraph, sceneElements.camera );
             },
         };
 
-        // FUCNTIONS FOR BUILDING THE SCENE
+        // FUNCTIONS FOR BUILDING THE SCENE
 
         const scene = {
 
             // Create and insert in the scene graph the models of the 3D scene
 
-            load3DObjects: function (sceneGraph) {
+            load3DObjects: function ( sceneGraph ) {
 
                 // ************************** //
                 // Create the city stand (long box)
                 // ************************** //
-                const towerGeometry = new THREE.BoxGeometry(10, 1000, 10);
+                const towerGeometry = new THREE.BoxGeometry( 10, 1000, 10 );
                 const towerMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(30,0,40)' });
-                const cityTower = new THREE.Mesh(towerGeometry, towerMaterial);
-                cityTower.position.set(0, -500, 0);
+                const cityTower = new THREE.Mesh( towerGeometry, towerMaterial );
+                cityTower.position.set( 0, -500, 0 );
                 cityTower.name = "cityTower";
                 stands.cityTower = cityTower;
 
-                sceneGraph.add(cityTower);
+                sceneGraph.add( cityTower );
 
                 // ************************** //
                 // Create the orthogonal city stand (long plane)
                 // ************************** //
-                const planeGeometry = new THREE.BoxGeometry(100, 1, 100);
+                const planeGeometry = new THREE.BoxGeometry( 100, 1, 100 );
                 const planeMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(255,255,255)' });
-                const cityPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-                cityPlane.position.set(0, -0.5, 0);
+                const cityPlane = new THREE.Mesh( planeGeometry, planeMaterial );
+                cityPlane.position.set( 0, -0.5, 0 );
                 cityPlane.receiveShadow = true;
                 cityPlane.name = "cityPlane";
                 stands.cityPlane = cityPlane;
@@ -303,41 +297,65 @@
 
                 mtlLoader.load(
                     'models/monu2/monu2.mtl',
-                    (materials) => {
+                    ( materials ) => {
                         materials.preload()
-                        console.log(materials)
+                        console.log( materials )
                         const objLoader = new OBJLoader()
-                        objLoader.setMaterials(materials)
+                        objLoader.setMaterials( materials )
                         objLoader.load(
-                            'models/monu2/monu2_imp.obj',
-                            (object) => {
-                                object.traverse((child) => {
-                                    if (child instanceof THREE.Mesh) {
+                            'models/monu2/monu2.obj',
+                            ( object ) => {
+                                object.traverse( ( child ) => {
+                                    if ( child instanceof THREE.Mesh ) {
                                         child.castShadow = true;
                                         child.receiveShadow = true;
                                     }
                                 });
                                 object.receiveShadow = true;
                                 object.castShadow = true;
-                                object.name = "monu2";
-                                console.log(object);
-                                sceneGraph.add(object);
+                                object.name = "room";
+                                console.log( object );
+                                sceneGraph.add( object );
                             },
                             (xhr) => {
-                                console.log((xhr.loaded / xhr.total) * 43333333330 + '% loaded')
+                                console.log( ( xhr.loaded / xhr.total ) * 43333333330 + '% loaded' )
                             },
                             (error) => {
-                                console.log('An error happened')
+                                console.log( 'An error happened' )
                             }
                         )
                     },
                     (xhr) => {
-                        console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+                        console.log( ( xhr.loaded / xhr.total ) * 100 + '% loaded' )
                     },
                     (error) => {
-                        console.log('An error happened')
+                        console.log( 'An error happened' )
                     }
                 )
+
+                // ************************** //
+                // Load a VOX model
+                // ************************** //
+
+                /* const loader = new VOXLoader();
+				loader.load( 'models/room/room.vox', function ( chunks ) {
+
+					for ( let i = 0; i < chunks.length; i ++ ) {
+
+						const chunk = chunks[ i ];
+
+						// displayPalette( chunk.palette );
+
+						const mesh = new VOXMesh( chunk );
+                        mesh.receiveShadow = true;
+                        mesh.castShadow = true;
+						mesh.scale.setScalar( 1 );
+						sceneElements.sceneGraph.add( mesh );
+
+					}
+
+				} ); */
+
 
             }
         };
@@ -353,29 +371,23 @@
         let canJump = false;
 
         let prevTime = performance.now();
+
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
         const vertex = new THREE.Vector3();
         const color = new THREE.Color();
+
         raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 0.5 );
-
-
-        // Displacement values
-        var delta = 0.1;
 
         function computeFrame() {
 
             const time = performance.now();
             
             if ( controls.fps.isLocked === true ) {
-                console.log(controls.fps.isLocked);
                 raycaster.ray.origin.copy( controls.fps.getObject().position );
                 raycaster.ray.origin.y -= 0.5;
-
-                const obj = sceneElements.sceneGraph.getObjectByName("monu2");
                 
-                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph.getObjectByName("monu2").children, false );
-                console.log(intersections.length);
+                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph.getObjectByName("room").children, false );
                 const onObject = intersections.length > 0;
 
                 const delta = ( time - prevTime ) / 1000;
@@ -418,45 +430,44 @@
             prevTime = time;
 
             // Rendering
-            helper.render(sceneElements);
+            helper.render( sceneElements );
 
             // Animation
-            //Call for the next frame
-            requestAnimationFrame(computeFrame);
+            // Call for the next frame
+            requestAnimationFrame( computeFrame );
         }
 
         function init() {
-            helper.initEmptyScene(sceneElements);
-            scene.load3DObjects(sceneElements.sceneGraph);
-            //sleep(50).then(() => {
-            //    helper.render(sceneElements);
-            //    controls.per.addEventListener('change', () => {
-            //        helper.render(sceneElements);
-            //    });
-            //    controls.ort.addEventListener('change', () => {
-            //        helper.render(sceneElements);
-            //    });
-            //});
-            requestAnimationFrame(computeFrame);
+            helper.initEmptyScene( sceneElements );
+            scene.load3DObjects( sceneElements.sceneGraph );
+
+            requestAnimationFrame( computeFrame );
         }
 
         // HANDLING EVENTS
 
         // Event Listeners
 
-        window.addEventListener('resize', resizeWindow);
-
         // Update render image size and camera aspect when the window is resized
-        function resizeWindow(eventParam) {
+        function resizeWindow( eventParam ) {
             const width = window.innerWidth;
             const height = window.innerHeight;
 
-            sceneElements.camera.aspect = width / height;
-            sceneElements.camera.updateProjectionMatrix();
+            // Perspective camera
+            if (sceneElements.camera.isPerspectiveCamera) {
+                sceneElements.camera.aspect = width / height;
+                sceneElements.camera.updateProjectionMatrix();            
+            }
+            else {
+                cameras.orthographic.left = width / -ortScale;
+                cameras.orthographic.right = width / ortScale;
+                cameras.orthographic.top = height / ortScale;
+                cameras.orthographic.bottom = height / -ortScale;
+            }
 
-            sceneElements.renderer.setSize(width, height);
+            sceneElements.renderer.setSize( width, height );
 
-            helper.render(sceneElements);
+            helper.render( sceneElements );
 
             // Comment when doing animation
             // computeFrame(sceneElements);
@@ -494,29 +505,37 @@
                 case 'KeyR':
                     controls.per.reset();
                     controls.ort.reset();
+                    controls.fps.reset();
                     break;
                 
                 case 'KeyP':
                     if (sceneElements.camera == cameras.perspective) {
+                        console.log( "Orthographic Camera" );
+
                         sceneElements.camera = cameras.orthographic;
-                        sceneElements.sceneGraph.remove(stands.cityTower);
-                        sceneElements.sceneGraph.add(stands.cityPlane);
+                        sceneElements.sceneGraph.remove( stands.cityTower );
+                        sceneElements.sceneGraph.add( stands.cityPlane );
                     }
                     else if (sceneElements.camera == cameras.orthographic) {
+                        console.log( "First Person Camera" );
+
                         sceneElements.camera = cameras.firstperson;
-                        sceneElements.sceneGraph.remove(stands.cityPlane);
-                        sceneElements.sceneGraph.add(stands.cityTower);
+                        sceneElements.sceneGraph.remove( stands.cityPlane );
+                        sceneElements.sceneGraph.add( stands.cityTower );
                         controls.fps.connect(); controls.fps.lock();
                         controls.per.enabled = false; controls.ort.enabled = false;
-                        console.log("First Person Camera");
                     }
                     else {
+                        console.log( "Perspective Camera" );
+
                         controls.fps.disconnect(); controls.fps.unlock(); controls.fps.isLocked = false;
                         controls.per.enabled = true; controls.ort.enabled = true;
                         sceneElements.camera = cameras.perspective;
                     }
+
                     controls.ort.update();
                     controls.per.update();
+
                     break;
 
             }
@@ -551,12 +570,11 @@
 
         };
 
+        window.addEventListener( 'resize', resizeWindow );
         document.addEventListener( 'keydown', onKeyDown );
         document.addEventListener( 'keyup', onKeyUp );
 
-
         // STARTING
-
         init();
 
     </script>
