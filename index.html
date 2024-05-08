@@ -61,15 +61,46 @@
             cityPlane: null,
         };
 
+        // Models
+
+        const models = [
+            {
+                name: "StaticCity",
+                path: "models/NightCity/NightCity-0-StaticCity.obj",
+                mtl: "models/NightCity/NightCity-0-StaticCity.mtl",
+            },
+            {
+                name: "CrosswalkGreen",
+                path: "models/NightCity/NightCity-1-CrosswalkGreen.obj",
+                mtl: "models/NightCity/NightCity-1-CrosswalkGreen.mtl",
+            },
+            {
+                name: "CrosswalkRed",
+                path: "models/NightCity/NightCity-2-CrosswalkRed.obj",
+                mtl: "models/NightCity/NightCity-2-CrosswalkRed.mtl",
+            },
+            {
+                name: "ICGBuilding",
+                path: "models/NightCity/NightCity-3-ICGBuilding.obj",
+                mtl: "models/NightCity/NightCity-3-ICGBuilding.mtl",
+            },
+            {
+                name: "ICGSign",
+                path: "models/NightCity/NightCity-4-ICGSign.obj",
+                mtl: "models/NightCity/NightCity-4-ICGSign.mtl",
+            },
+            {
+                name: "ICGIntLights",
+                path: "models/NightCity/NightCity-5-ICGIntLights.obj",
+                mtl: "models/NightCity/NightCity-5-ICGIntLights.mtl",
+            }
+        ]
+
         // Useful constants
 
         const ortScale = 80 // Orthographic camera constant, to define the viewing box
 
         // HELPER FUNCTIONS
-
-        function sleep( ms ) {
-            return new Promise( resolve => setTimeout(resolve, ms) );
-        }
 
         const helper = {
 
@@ -250,8 +281,8 @@
                 // ************************** //
                 // Create the city stand (long box)
                 // ************************** //
-                const towerGeometry = new THREE.BoxGeometry( 10, 1000, 10 );
-                const towerMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(30,0,40)' });
+                const towerGeometry = new THREE.BoxGeometry( 20, 1000, 20 );
+                const towerMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(17,17,17)' });
                 const cityTower = new THREE.Mesh( towerGeometry, towerMaterial );
                 cityTower.position.set( 0, -500, 0 );
                 cityTower.name = "cityTower";
@@ -295,72 +326,179 @@
                 // ************************** //
                 const mtlLoader = new MTLLoader( manager );
 
-                mtlLoader.load(
-                    'models/monu2/monu2.mtl',
-                    ( materials ) => {
-                        materials.preload()
-                        console.log( materials )
-                        const objLoader = new OBJLoader()
-                        objLoader.setMaterials( materials )
-                        objLoader.load(
-                            'models/monu2/monu2.obj',
-                            ( object ) => {
-                                object.traverse( ( child ) => {
-                                    if ( child instanceof THREE.Mesh ) {
-                                        child.castShadow = true;
-                                        child.receiveShadow = true;
+                const loadingPromises = [];
+
+                // For every OBJ model in the directory, load the corresponding MTL file
+                models.forEach(model => {
+                    const promise = new Promise((resolve, reject) => {
+                        mtlLoader.load(
+                            model.mtl,
+                            (materials) => {
+                                materials.preload()
+                                const objLoader = new OBJLoader()
+                                objLoader.setMaterials( materials )
+                                objLoader.load(
+                                    model.path,
+                                    (object) => {
+                                        object.traverse((child) => {
+                                            if (child instanceof THREE.Mesh) {
+                                                child.castShadow = true;
+                                                child.receiveShadow = true;
+                                            }
+                                        });
+                                        object.receiveShadow = true;
+                                        object.castShadow = true;
+                                        object.name = model.name;
+                                        sceneGraph.add( object );
+                                        resolve();
+
+                                        // Setup model
+                                        scene.setup( object )
+                                    },
+                                    (xhr) => {
+                                        console.log( model.name + ' - ' + ( xhr.loaded / xhr.total ) * 43333333330 + '% loaded' )
+                                    },
+                                    (error) => {
+                                        console.log( model.name + ' - ' + 'An error happened' );
+                                        reject(error);
                                     }
-                                });
-                                object.receiveShadow = true;
-                                object.castShadow = true;
-                                object.name = "room";
-                                console.log( object );
-                                sceneGraph.add( object );
+                                )
                             },
                             (xhr) => {
-                                console.log( ( xhr.loaded / xhr.total ) * 43333333330 + '% loaded' )
+                                console.log( ( model.name + ' - ' + xhr.loaded / xhr.total ) * 100 + '% loaded' )
                             },
                             (error) => {
-                                console.log( 'An error happened' )
+                                console.log( model.name + ' - ' + 'An error happened' )
                             }
                         )
-                    },
-                    (xhr) => {
-                        console.log( ( xhr.loaded / xhr.total ) * 100 + '% loaded' )
-                    },
-                    (error) => {
-                        console.log( 'An error happened' )
-                    }
-                )
+                    });
+                    loadingPromises.push(promise);
+                });
 
+                return Promise.all(loadingPromises);
+            },
+
+            setup: function ( obj ) {
+
+                console.log( obj.name );
+                
                 // ************************** //
-                // Load a VOX model
+                // Setup models
                 // ************************** //
 
-                /* const loader = new VOXLoader();
-				loader.load( 'models/room/room.vox', function ( chunks ) {
+                switch (obj.name) {
+                    case "CrosswalkGreen":
+                        //obj.position.set( 0, 0.01, 0 );
+                        obj.castShadow = false;
+                        obj.receiveShadow = false;
+                        // Set emissive color
+                        obj.traverse( function ( child ) {
+                            if ( child instanceof THREE.Mesh ) {
+                                child.material.color.set( 'rgb(17,17,17)' );
+                                child.material.emissive.set( 0x00ff00 );
+                                child.material.emissiveIntensity = 0;
+                            }
+                        });
+                        break;
+                    case "CrosswalkRed":
+                        //obj.position.set( 0, 0.01, 0 );
+                        obj.castShadow = false;
+                        obj.receiveShadow = false;
+                        obj.traverse( function ( child ) {
+                            if ( child instanceof THREE.Mesh ) {
+                                child.material.color.set( 'rgb(17,17,17)' );
+                                child.material.emissive.set( 0xff0000 );
+                                child.material.emissiveIntensity = 0;
+                            }
+                        });
+                        break;
+                    case "ICGSign":
+                        obj.traverse( function ( child ) {
+                            if ( child instanceof THREE.Mesh ) {
+                                child.material.emissive.set( 0xff0000 );
+                            }
+                        });
+                        break;
+                    case "ICGIntLights":
+                        obj.traverse( function ( child ) {
+                            if ( child instanceof THREE.Mesh ) {
+                                child.material.emissive.set( child.material.color );
+                                child.material.emissiveIntensity = 0.4;
+                            }
+                        });
+                        break;
+                }
+                // Crosswalk
+                
+                // Green
+                const crosswalkGreen = sceneGraph.getObjectByName( "CrosswalkGreen" );
+                crosswalkGreen.position.set( 0, 0.2, 0 );
 
-					for ( let i = 0; i < chunks.length; i ++ ) {
-
-						const chunk = chunks[ i ];
-
-						// displayPalette( chunk.palette );
-
-						const mesh = new VOXMesh( chunk );
-                        mesh.receiveShadow = true;
-                        mesh.castShadow = true;
-						mesh.scale.setScalar( 1 );
-						sceneElements.sceneGraph.add( mesh );
-
-					}
-
-				} ); */
-
-
+                // Red
+                const crosswalkRed = sceneGraph.getObjectByName( "CrosswalkRed" );
+                crosswalkRed.position.set( 0, 0.2, 0 );
             }
         };
 
         // ANIMATION
+        
+
+        // Animation functions
+
+        // Define variables to control blinking intervals
+        let lastToggleTime = 0;
+        let isGreen = false; // Start with red lights
+
+        // Define the interval for each set of lights (in milliseconds)
+        const blinkInterval = 2000; // Blink interval for each set of lights
+
+        // Inside your update/render loop or wherever you manage animation timing
+        function crosswalkLights(time) {
+            // Calculate time since last toggle
+            const elapsedTime = time - lastToggleTime;
+
+            const crosswalkGreen = sceneElements.sceneGraph.getObjectByName( "CrosswalkGreen" );
+            const crosswalkRed = sceneElements.sceneGraph.getObjectByName( "CrosswalkRed" );
+
+            // Check if it's time to toggle lights
+            if (elapsedTime >= blinkInterval) {
+                // Toggle lights
+                isGreen = !isGreen;
+                lastToggleTime = time;
+
+                if (isGreen) {
+                    // Green lights are on
+                    crosswalkRed.traverse(function(child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material.emissiveIntensity = 0; // Turn off red lights
+                        }
+                    });
+                } else {
+                    // Red lights are on
+                    crosswalkGreen.traverse(function(child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material.emissiveIntensity = 0; // Turn off green lights
+                        }
+                    });
+                }
+            }
+
+            if (isGreen) {
+                // Green lights are on
+                crosswalkGreen.traverse( function ( child ) {
+                    if ( child instanceof THREE.Mesh ) {
+                        child.material.emissiveIntensity = Math.abs( Math.sin( (time - lastToggleTime) * 0.003 ) );
+                    }
+                });
+            } else {
+                // Red lights are on
+                crosswalkRed.traverse( function ( child ) {
+                    if ( child instanceof THREE.Mesh ) {
+                        child.material.emissiveIntensity = Math.abs( Math.sin( (time - lastToggleTime) * 0.003 ) );
+                    }
+                });
+            }
+        }
 
         let raycaster;
 
@@ -381,13 +519,15 @@
 
         function computeFrame() {
 
+            // FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html
+
             const time = performance.now();
             
             if ( controls.fps.isLocked === true ) {
                 raycaster.ray.origin.copy( controls.fps.getObject().position );
-                raycaster.ray.origin.y -= 0.5;
+                raycaster.ray.origin.y -= 1.1;
                 
-                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph.getObjectByName("room").children, false );
+                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph, false );
                 const onObject = intersections.length > 0;
 
                 const delta = ( time - prevTime ) / 1000;
@@ -416,16 +556,20 @@
 
                 controls.fps.getObject().position.y += ( velocity.y * delta ); // new behavior
 
-                if ( controls.fps.getObject().position.y < 0.5 ) {
+                if ( controls.fps.getObject().position.y < 1.1 ) {
 
                     velocity.y = 0;
-                    controls.fps.getObject().position.y = 0.5;
+                    controls.fps.getObject().position.y = 1.1;
 
                     canJump = true;
 
                 }
 
             }
+
+            // Model animations
+
+            crosswalkLights(time);
 
             prevTime = time;
 
@@ -439,9 +583,9 @@
 
         function init() {
             helper.initEmptyScene( sceneElements );
-            scene.load3DObjects( sceneElements.sceneGraph );
-
-            requestAnimationFrame( computeFrame );
+            scene.load3DObjects( sceneElements.sceneGraph ).then(() => {
+                requestAnimationFrame( computeFrame );
+            });
         }
 
         // HANDLING EVENTS
