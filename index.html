@@ -36,6 +36,9 @@
         import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
         import { VOXLoader, VOXMesh } from 'three/addons/loaders/VOXLoader.js';
 
+        // The day-night cycle comes from an extension available here: https://github.com/jeromeetienne/threex.daynight
+        import { THREEx } from 'three/addons/other/DayNightCycle.js';
+
         // To store the scene graph, and elements useful to rendering the scene
         const sceneElements = {
             sceneGraph: null,
@@ -59,6 +62,13 @@
         const stands = {
             cityTower: null,
             cityPlane: null,
+        };
+
+        const daynight = {
+            sunSphere: null,
+            sunLight: null,
+            skydom: null,
+            starField: null,
         };
 
         // Models
@@ -93,7 +103,12 @@
                 name: "ICGIntLights",
                 path: "models/NightCity/NightCity-5-ICGIntLights.obj",
                 mtl: "models/NightCity/NightCity-5-ICGIntLights.mtl",
-            }
+            },
+            {
+                name: "Map",
+                path: "models/Targets/untitled.obj",
+                mtl: "models/Targets/untitled.mtl",
+            },
         ]
 
         // Useful constants
@@ -121,10 +136,8 @@
                 const aspectRatio = width / height;
                 const perCamera = new THREE.PerspectiveCamera( 45, aspectRatio, 0.1, 500 );
                 cameras.perspective = perCamera;
-                sceneElements.camera = perCamera;
-                sceneElements.camera.position.set( 15, 18, 15 );
-                sceneElements.camera.lookAt( 0, 5, 0 );
-
+                perCamera.position.set( 15, 18, 15 );
+                perCamera.lookAt( 0, 5, 0 );
 
                 // ************************** //
                 // Create the orthographic camera
@@ -142,6 +155,8 @@
                 fpsCamera.position.set( 0, 10, 0 );
                 cameras.firstperson = fpsCamera;
 
+                sceneElements.camera = perCamera;
+                
 
                 // -------------------------- //
                 // Illumination
@@ -179,6 +194,21 @@
                 //sceneElements.sceneGraph.add(moonlight);
                 //sceneElements.sceneGraph.add( new THREE.CameraHelper( moonlight.shadow.camera ) );
 
+                // ***************************** //
+                // Day-night cycle
+                // ***************************** //
+
+                daynight.sunSphere	= new THREEx.DayNight.SunSphere()
+                sceneElements.sceneGraph.add( daynight.sunSphere.object3d )
+
+                daynight.sunLight	= new THREEx.DayNight.SunLight()
+                sceneElements.sceneGraph.add( daynight.sunLight.object3d )
+
+                daynight.skydom	= new THREEx.DayNight.Skydom()
+                sceneElements.sceneGraph.add( daynight.skydom.object3d )
+
+                daynight.starField	= new THREEx.DayNight.StarField()
+                sceneElements.sceneGraph.add( daynight.starField.object3d )
 
                 // ***************************** //
                 // Add point light souce (with shadows)
@@ -186,7 +216,7 @@
                 const light_1 = new THREE.PointLight( 'rgb(255, 255, 255)', 19 );
                 light_1.decay = 1;
                 light_1.position.set( 10, 10, 2 );
-                sceneElements.sceneGraph.add( light_1 );
+                //sceneElements.sceneGraph.add( light_1 );
 
                 // Setup shadow properties for the point light
                 light_1.castShadow = true;
@@ -259,7 +289,9 @@
                 // First Person camera
                 
                 controls.fps = new PointerLockControls( fpsCamera, renderer.domElement );
-                controls.fps.disconnect();
+                //controls.fps.disconnect();
+                controls.per.enabled = false; controls.ort.enabled = false;
+                controls.fps.connect(); controls.fps.lock(); controls.fps.isLocked === true;
                 sceneElements.sceneGraph.add( controls.fps.getObject() );
                 console.log(controls.fps.getObject());
 
@@ -349,7 +381,12 @@
                                         object.receiveShadow = true;
                                         object.castShadow = true;
                                         object.name = model.name;
-                                        sceneGraph.add( object );
+                                        if (model.name == "Map") {
+                                            object.scale.set( 3, 3, 3 );
+                                            object.position.set( 0, 1, 0 );
+                                            sceneGraph.add( object );
+                                        }
+                                        
                                         resolve();
 
                                         // Setup model
@@ -427,16 +464,15 @@
                             }
                         });
                         break;
+                    case "Target":
+                        obj.traverse( function ( child ) {
+                            if ( child instanceof THREE.Mesh ) {
+                                child.material.emissive.set( 0xff0000 );
+                            }
+                        });
+                        obj.position.set( 0, 10, 0 );
+                        break;
                 }
-                // Crosswalk
-                
-                // Green
-                const crosswalkGreen = sceneGraph.getObjectByName( "CrosswalkGreen" );
-                crosswalkGreen.position.set( 0, 0.2, 0 );
-
-                // Red
-                const crosswalkRed = sceneGraph.getObjectByName( "CrosswalkRed" );
-                crosswalkRed.position.set( 0, 0.2, 0 );
             }
         };
 
@@ -444,61 +480,6 @@
         
 
         // Animation functions
-
-        // Define variables to control blinking intervals
-        let lastToggleTime = 0;
-        let isGreen = false; // Start with red lights
-
-        // Define the interval for each set of lights (in milliseconds)
-        const blinkInterval = 2000; // Blink interval for each set of lights
-
-        // Inside your update/render loop or wherever you manage animation timing
-        function crosswalkLights(time) {
-            // Calculate time since last toggle
-            const elapsedTime = time - lastToggleTime;
-
-            const crosswalkGreen = sceneElements.sceneGraph.getObjectByName( "CrosswalkGreen" );
-            const crosswalkRed = sceneElements.sceneGraph.getObjectByName( "CrosswalkRed" );
-
-            // Check if it's time to toggle lights
-            if (elapsedTime >= blinkInterval) {
-                // Toggle lights
-                isGreen = !isGreen;
-                lastToggleTime = time;
-
-                if (isGreen) {
-                    // Green lights are on
-                    crosswalkRed.traverse(function(child) {
-                        if (child instanceof THREE.Mesh) {
-                            child.material.emissiveIntensity = 0; // Turn off red lights
-                        }
-                    });
-                } else {
-                    // Red lights are on
-                    crosswalkGreen.traverse(function(child) {
-                        if (child instanceof THREE.Mesh) {
-                            child.material.emissiveIntensity = 0; // Turn off green lights
-                        }
-                    });
-                }
-            }
-
-            if (isGreen) {
-                // Green lights are on
-                crosswalkGreen.traverse( function ( child ) {
-                    if ( child instanceof THREE.Mesh ) {
-                        child.material.emissiveIntensity = Math.abs( Math.sin( (time - lastToggleTime) * 0.003 ) );
-                    }
-                });
-            } else {
-                // Red lights are on
-                crosswalkRed.traverse( function ( child ) {
-                    if ( child instanceof THREE.Mesh ) {
-                        child.material.emissiveIntensity = Math.abs( Math.sin( (time - lastToggleTime) * 0.003 ) );
-                    }
-                });
-            }
-        }
 
         let raycaster;
 
@@ -510,27 +491,62 @@
 
         let prevTime = performance.now();
 
+        const height = 0.5;
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
         const vertex = new THREE.Vector3();
         const color = new THREE.Color();
 
-        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 0.5 );
+        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, height );
+        // Raycaster helper
+
+        // begining position
+        var sunAngle = -1/6*Math.PI*2;
+        // the day duraction in seconds
+        var dayDuration	= 30
 
         function computeFrame() {
-
+            //sceneElements.sceneGraph.add( new THREE.ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 2, 0xff0000 ) );
             // FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html
 
             const time = performance.now();
+            const delta = ( time - prevTime ) / 1000;
             
             if ( controls.fps.isLocked === true ) {
                 raycaster.ray.origin.copy( controls.fps.getObject().position );
-                raycaster.ray.origin.y -= 1.1;
                 
-                const intersections = raycaster.intersectObjects( sceneElements.sceneGraph, false );
-                const onObject = intersections.length > 0;
+                const intersects = [];
+                var temp;
+                for (var i in sceneElements.sceneGraph.children) {
+                    if (sceneElements.sceneGraph.children[i] instanceof THREE.Group) {
+                        temp = raycaster.intersectObjects(sceneElements.sceneGraph.children[i].children, true);
+                        if (temp.length > 0) {
+                            intersects.push(...temp);
+                        }
+                    } else if (sceneElements.sceneGraph.children[i] instanceof THREE.Mesh) {
+                        temp = raycaster.intersectObject(sceneElements.sceneGraph.children[i]);
+                        if (temp.length > 0) {
+                            intersects.push(temp);
+                        }
+                    }
+                }
 
-                const delta = ( time - prevTime ) / 1000;
+
+                if ( intersects.length > 0 ) {
+
+                    const distance = intersects[0].distance;
+
+                    for ( let i = 1; i < intersects.length; i ++ ) {
+                        if ( intersects[i].distance < distance ) {
+                            distance = intersects[i].distance;
+                        }
+                    }
+
+                    if ( distance > 1 && distance < height ) {
+                        controls.fps.getObject().position.y += (height - distance);
+                    }
+                }
+                const onObject = intersects.length > 0;
 
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
@@ -565,11 +581,18 @@
 
                 }
 
+                console.log(canJump);
             }
+
+            sunAngle += delta/dayDuration * Math.PI*2;
+            daynight.starField.update(sunAngle);
+            daynight.skydom.update(sunAngle);
+            daynight.sunLight.update(sunAngle);
+            daynight.sunSphere.update(sunAngle);
 
             // Model animations
 
-            crosswalkLights(time);
+            //crosswalkLights(time);
 
             prevTime = time;
 
