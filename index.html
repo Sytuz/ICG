@@ -71,43 +71,89 @@
             starField: null,
         };
 
+        const wheels = [];
+
+        var streetLightBoxes = [];
+        var streetLights = [];
+        
+        // The positions correspond to the blender coordinates
+        // z axis is simetrical in comparison to the blender coordinates (Threejs z = Blender -y)
+        const scale = 3;
+        const offset = 0.5;
+        const streetLightPositions = [
+            { x: 0, y: 2, z: 1.05, rotation: 3*Math.PI/2 }, // Pointing downwards
+            { x: 0, y: 2, z: -1.05, rotation: Math.PI/2 }, // Pointing upwards
+            { x: 1.05, y: 2, z: 0, rotation: Math.PI }, // Pointing to the right
+            { x: -1.05, y: 2, z: 0, rotation: 0 }, // Pointing to the left
+            // Down
+            { x: -3, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: -1, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: 1, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: 3, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: 5, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: 7, y: 2, z: -4.95, rotation: 3*Math.PI/2 },
+            { x: -7, y: 2, z: -1.95, rotation: 3*Math.PI/2 },
+            // Up
+            { x: 3, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: 1, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: -1, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: -3, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: -6, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: -8, y: 2, z: 4.95, rotation: Math.PI/2 },
+            { x: -3, y: 2, z: 7.95, rotation: Math.PI/2 },
+            { x: -1, y: 2, z: 7.95, rotation: Math.PI/2 },
+            { x: 1, y: 2, z: 7.95, rotation: Math.PI/2 },
+            { x: 3, y: 2, z: 7.95, rotation: Math.PI/2 },
+            { x: -3, y: 2, z: -1.05, rotation: Math.PI/2 },
+            { x: 7, y: 2, z: -1.05, rotation: Math.PI/2 },
+            // Right
+            { x: -8.95, y: 2, z: 0, rotation: Math.PI },
+            { x: -8.95, y: 2, z: 3, rotation: Math.PI },
+            { x: -4.95, y: 2, z: -9, rotation: Math.PI },
+            { x: -4.95, y: 2, z: -6, rotation: Math.PI },
+            { x: -4.95, y: 2, z: -3, rotation: Math.PI },
+            { x: -4.95, y: 2, z: 0, rotation: Math.PI },
+            { x: -4.95, y: 2, z: 3, rotation: Math.PI },
+            { x: -4.95, y: 2, z: 6, rotation: Math.PI },
+            { x: -4.95, y: 2, z: 9, rotation: Math.PI },
+            { x: 1.05, y: 2, z: -3, rotation: Math.PI },
+            { x: 1.05, y: 2, z: 3, rotation: Math.PI },
+            // Left
+            { x: -4.05, y: 2, z: 1.5, rotation: 0 },
+            { x: 4.95, y: 2, z: 0, rotation: 0 },
+            { x: 4.95, y: 2, z: 2, rotation: 0 },
+            { x: 4.95, y: 2, z: 4, rotation: 0 },
+            { x: 4.95, y: 2, z: 6, rotation: 0 },
+            { x: 8.95, y: 2, z: -3, rotation: 0 },
+        ]
+
+        for (var i in streetLightPositions) {
+            streetLightPositions[i].x *= scale;
+            streetLightPositions[i].z *= scale;
+
+            if (streetLightPositions[i].rotation == 0) {
+                streetLightPositions[i].x -= offset;
+            } else if (streetLightPositions[i].rotation == Math.PI) {
+                streetLightPositions[i].x += offset;
+            } else if (streetLightPositions[i].rotation == Math.PI/2) {
+                streetLightPositions[i].z -= offset;
+            } else if (streetLightPositions[i].rotation == 3*Math.PI/2) {
+                streetLightPositions[i].z += offset;
+            }
+        }
+
         // Models
 
         const models = [
             {
-                name: "StaticCity",
-                path: "models/NightCity/NightCity-0-StaticCity.obj",
-                mtl: "models/NightCity/NightCity-0-StaticCity.mtl",
-            },
-            {
-                name: "CrosswalkGreen",
-                path: "models/NightCity/NightCity-1-CrosswalkGreen.obj",
-                mtl: "models/NightCity/NightCity-1-CrosswalkGreen.mtl",
-            },
-            {
-                name: "CrosswalkRed",
-                path: "models/NightCity/NightCity-2-CrosswalkRed.obj",
-                mtl: "models/NightCity/NightCity-2-CrosswalkRed.mtl",
-            },
-            {
-                name: "ICGBuilding",
-                path: "models/NightCity/NightCity-3-ICGBuilding.obj",
-                mtl: "models/NightCity/NightCity-3-ICGBuilding.mtl",
-            },
-            {
-                name: "ICGSign",
-                path: "models/NightCity/NightCity-4-ICGSign.obj",
-                mtl: "models/NightCity/NightCity-4-ICGSign.mtl",
-            },
-            {
-                name: "ICGIntLights",
-                path: "models/NightCity/NightCity-5-ICGIntLights.obj",
-                mtl: "models/NightCity/NightCity-5-ICGIntLights.mtl",
-            },
-            {
                 name: "Map",
-                path: "models/Targets/untitled.obj",
-                mtl: "models/Targets/untitled.mtl",
+                path: "models/untitled.obj",
+                mtl: "models/untitled.mtl",
+            },
+            {
+                name: "Sedan",
+                path: "models/Cars/sedan.obj",
+                mtl: "models/Cars/sedan.mtl",
             },
         ]
 
@@ -116,6 +162,34 @@
         const ortScale = 80 // Orthographic camera constant, to define the viewing box
 
         // HELPER FUNCTIONS
+
+        function createLight(params) {
+            const lightGeometry = new THREE.BoxGeometry( 0.13, 0.05, 0.12 );
+            const lightMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+            const lightBox = new THREE.Mesh( lightGeometry, lightMaterial );
+
+            lightBox.receiveShadow = true;
+            lightBox.castShadow = true;
+            lightBox.material.emissive.set( 0xffffff );
+            lightBox.material.emissiveIntensity = 0.25;
+
+            lightBox.position.set( params.x, params.y, params.z );
+            lightBox.rotation.y = params.rotation;
+
+            // Place a spotlight at the origin, pointing down the y-axis
+            const spotLight = new THREE.SpotLight( 0xffffff, 1 );
+            spotLight.position.set( params.x, params.y, params.z );
+            spotLight.target.position.set( params.x, -1, params.z );
+            spotLight.target.updateMatrixWorld();
+            spotLight.visible = false;
+            
+            streetLights.push(spotLight);
+            streetLightBoxes.push(lightBox);
+
+            sceneElements.sceneGraph.add( lightBox );
+            sceneElements.sceneGraph.add( spotLight );
+            sceneElements.sceneGraph.add( spotLight.target );
+        }
 
         const helper = {
 
@@ -134,9 +208,9 @@
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const aspectRatio = width / height;
-                const perCamera = new THREE.PerspectiveCamera( 45, aspectRatio, 0.1, 500 );
+                const perCamera = new THREE.PerspectiveCamera( 45, aspectRatio, 0.1, 2000 );
                 cameras.perspective = perCamera;
-                perCamera.position.set( 15, 18, 15 );
+                perCamera.position.set( 30, 18, 30 );
                 perCamera.lookAt( 0, 5, 0 );
 
                 // ************************** //
@@ -144,7 +218,7 @@
                 // ************************** //
                 const ortCamera = new THREE.OrthographicCamera( width / -ortScale, width / ortScale, height / ortScale, height / -ortScale, 0.5, 1000 );
                 cameras.orthographic = ortCamera;
-                ortCamera.position.set( 15, 18, 15 );
+                ortCamera.position.set( 30, 18, 30 );
                 ortCamera.lookAt( 0, 5, 0 );
 
 
@@ -152,9 +226,11 @@
                 // Create the first person camera
                 // ************************** //
                 const fpsCamera = new THREE.PerspectiveCamera( 75, aspectRatio, 0.1, 1000 );
-                fpsCamera.position.set( 0, 10, 0 );
+                fpsCamera.position.set( 2, 10, 0 );
                 cameras.firstperson = fpsCamera;
 
+
+                // Set the default camera
                 sceneElements.camera = perCamera;
                 
 
@@ -203,12 +279,12 @@
 
                 daynight.sunLight	= new THREEx.DayNight.SunLight()
                 sceneElements.sceneGraph.add( daynight.sunLight.object3d )
-
+                
                 daynight.skydom	= new THREEx.DayNight.Skydom()
                 sceneElements.sceneGraph.add( daynight.skydom.object3d )
 
-                daynight.starField	= new THREEx.DayNight.StarField()
-                sceneElements.sceneGraph.add( daynight.starField.object3d )
+                //daynight.starField	= new THREEx.DayNight.StarField()
+                //sceneElements.sceneGraph.add( daynight.starField.object3d )
 
                 // ***************************** //
                 // Add point light souce (with shadows)
@@ -230,17 +306,28 @@
                 // *********************************** //
                 // Add skybox
                 // *********************************** //
-                const loader = new THREE.CubeTextureLoader();
-                loader.setPath( 'models/Skybox/' );
+                //const loader = new THREE.CubeTextureLoader();
+                //loader.setPath( 'models/Skybox/' );
+//
+                //const textureCube = loader.load([
+                //'px.png', 'nx.png',
+                //'ny.png', 'py.png',
+                //'nz.png', 'pz.png'
+                //]);
+//
+                //sceneElements.sceneGraph.background = textureCube;
 
-                const textureCube = loader.load([
-                'px.png', 'nx.png',
-                'ny.png', 'py.png',
-                'nz.png', 'pz.png'
-                ]);
+                // Apply this material to your objects
+                const geometry = new THREE.BoxGeometry(1500, 10, 1500);
+                const mesh = new THREE.MeshStandardMaterial({ color: 0xCCCCCC });
+                const foggedObject = new THREE.Mesh(geometry, mesh);
+                foggedObject.position.set(0, -400, 0);
+                sceneElements.sceneGraph.add(foggedObject);
 
-                sceneElements.sceneGraph.background = textureCube;
-
+                // Create street lights
+                for (var i in streetLightPositions) {
+                    createLight(streetLightPositions[i]);
+                }
 
                 // -------------------------- //
                 // Renderer
@@ -252,7 +339,13 @@
 
                 // Setup shadowMap property
                 renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap; //THREE.BasicShadowMap | THREE.PCFShadowMap |  THREE.VSMShadowMap | THREE.PCFSoftShadowMap
+
+                renderer.shadowMap.soft = true;
+                renderer.shadowMap.bias = -0.0001;
+                renderer.shadowMap.darkness = 1;
+                renderer.shadowMap.width = 2048;
+                renderer.shadowMap.height = 2048;
 
 
                 // **************************************** //
@@ -289,12 +382,10 @@
                 // First Person camera
                 
                 controls.fps = new PointerLockControls( fpsCamera, renderer.domElement );
-                //controls.fps.disconnect();
-                controls.per.enabled = false; controls.ort.enabled = false;
+                controls.fps.disconnect();
+                //controls.per.enabled = false; controls.ort.enabled = false;
                 controls.fps.connect(); controls.fps.lock(); controls.fps.isLocked === true;
                 sceneElements.sceneGraph.add( controls.fps.getObject() );
-                console.log(controls.fps.getObject());
-
             },
 
             render: function ( sceneElements ) {
@@ -311,27 +402,64 @@
             load3DObjects: function ( sceneGraph ) {
 
                 // ************************** //
-                // Create the city stand (long box)
+                // Create the city plane
                 // ************************** //
-                const towerGeometry = new THREE.BoxGeometry( 20, 1000, 20 );
-                const towerMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(17,17,17)' });
-                const cityTower = new THREE.Mesh( towerGeometry, towerMaterial );
-                cityTower.position.set( 0, -500, 0 );
-                cityTower.name = "cityTower";
-                stands.cityTower = cityTower;
+                const loader = new THREE.TextureLoader();
+                const grassTexture = loader.load('./images/grass/grass_texture.png');
+                const displacementMap = loader.load('./images/grass/grass_displacement.png');
+                const aoMap = loader.load('./images/grass/grass_ao.png');
+                const roughnessMap = loader.load('./images/grass/grass_roughness.png');
 
-                sceneGraph.add( cityTower );
+                const factor = 8;
 
-                // ************************** //
-                // Create the orthogonal city stand (long plane)
-                // ************************** //
-                const planeGeometry = new THREE.BoxGeometry( 100, 1, 100 );
+                grassTexture.wrapS = THREE.RepeatWrapping;
+                grassTexture.wrapT = THREE.RepeatWrapping;
+                grassTexture.repeat.set(factor, factor); // Adjust these values to scale the texture as needed
+
+                displacementMap.wrapS = THREE.RepeatWrapping;
+                displacementMap.wrapT = THREE.RepeatWrapping;
+                displacementMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+
+                aoMap.wrapS = THREE.RepeatWrapping;
+                aoMap.wrapT = THREE.RepeatWrapping;
+                aoMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+
+                roughnessMap.wrapS = THREE.RepeatWrapping;
+                roughnessMap.wrapT = THREE.RepeatWrapping;
+                roughnessMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+
+                const grassMaterial = new THREE.MeshStandardMaterial({
+                    map: grassTexture,
+                    displacementMap: displacementMap,
+                    displacementScale: 0,
+                    aoMap: aoMap,
+                    aoMapIntensity: 0.5,
+                    roughnessMap: roughnessMap,
+                    roughness: 0.5,
+                });
+
+                const otherMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color for the other sides
+
+                // Step 4: Create an array of materials, assigning the grass material to the upper face (index 4)
+                const materials = [
+                otherMaterial, // Right face
+                otherMaterial, // Left face
+                grassMaterial, // Front face (this is actually the upper face)
+                otherMaterial, // Bottom face
+                otherMaterial,
+                otherMaterial, // Back face
+                ];
+
+
+                const planeGeometry = new THREE.BoxGeometry( 60, 1000, 60 );
                 const planeMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(255,255,255)' });
-                const cityPlane = new THREE.Mesh( planeGeometry, planeMaterial );
-                cityPlane.position.set( 0, -0.5, 0 );
+                const cityPlane = new THREE.Mesh( planeGeometry, materials );
+                cityPlane.position.set( 0, -500, 0 );
                 cityPlane.receiveShadow = true;
                 cityPlane.name = "cityPlane";
                 stands.cityPlane = cityPlane;
+
+                sceneGraph.add( cityPlane );
 
                 // ************************** //
                 // Setting up a loading manager
@@ -372,6 +500,7 @@
                                 objLoader.load(
                                     model.path,
                                     (object) => {
+                                        console.log(object)
                                         object.traverse((child) => {
                                             if (child instanceof THREE.Mesh) {
                                                 child.castShadow = true;
@@ -383,7 +512,19 @@
                                         object.name = model.name;
                                         if (model.name == "Map") {
                                             object.scale.set( 3, 3, 3 );
-                                            object.position.set( 0, 1, 0 );
+                                            object.position.set( 0, 0.05, 0 );
+                                            sceneGraph.add( object );
+                                        }
+                                        else if (model.name == "Sedan") {
+                                            var textureLoader = new THREE.TextureLoader();
+                                            var texture = textureLoader.load( 'models/Cars/colormap.png' );
+                                            object.traverse( function ( child ) {
+                                                if ( child instanceof THREE.Mesh ) {
+                                                    child.material.map = texture;
+                                                }
+                                            });
+                                            object.scale.set( 0.5, 0.5, 0.5 );
+                                            object.position.set( -14, 0.05, -29 );
                                             sceneGraph.add( object );
                                         }
                                         
@@ -396,7 +537,7 @@
                                         console.log( model.name + ' - ' + ( xhr.loaded / xhr.total ) * 43333333330 + '% loaded' )
                                     },
                                     (error) => {
-                                        console.log( model.name + ' - ' + 'An error happened' );
+                                        console.log( model.name + ' - ' + 'An error happened' ); 
                                         reject(error);
                                     }
                                 )
@@ -423,56 +564,7 @@
                 // Setup models
                 // ************************** //
 
-                switch (obj.name) {
-                    case "CrosswalkGreen":
-                        //obj.position.set( 0, 0.01, 0 );
-                        obj.castShadow = false;
-                        obj.receiveShadow = false;
-                        // Set emissive color
-                        obj.traverse( function ( child ) {
-                            if ( child instanceof THREE.Mesh ) {
-                                child.material.color.set( 'rgb(17,17,17)' );
-                                child.material.emissive.set( 0x00ff00 );
-                                child.material.emissiveIntensity = 0;
-                            }
-                        });
-                        break;
-                    case "CrosswalkRed":
-                        //obj.position.set( 0, 0.01, 0 );
-                        obj.castShadow = false;
-                        obj.receiveShadow = false;
-                        obj.traverse( function ( child ) {
-                            if ( child instanceof THREE.Mesh ) {
-                                child.material.color.set( 'rgb(17,17,17)' );
-                                child.material.emissive.set( 0xff0000 );
-                                child.material.emissiveIntensity = 0;
-                            }
-                        });
-                        break;
-                    case "ICGSign":
-                        obj.traverse( function ( child ) {
-                            if ( child instanceof THREE.Mesh ) {
-                                child.material.emissive.set( 0xff0000 );
-                            }
-                        });
-                        break;
-                    case "ICGIntLights":
-                        obj.traverse( function ( child ) {
-                            if ( child instanceof THREE.Mesh ) {
-                                child.material.emissive.set( child.material.color );
-                                child.material.emissiveIntensity = 0.4;
-                            }
-                        });
-                        break;
-                    case "Target":
-                        obj.traverse( function ( child ) {
-                            if ( child instanceof THREE.Mesh ) {
-                                child.material.emissive.set( 0xff0000 );
-                            }
-                        });
-                        obj.position.set( 0, 10, 0 );
-                        break;
-                }
+
             }
         };
 
@@ -487,21 +579,31 @@
         let moveBackward = false;
         let moveLeft = false;
         let moveRight = false;
+        let sprint = false;
+        let canDoubleJump = false;
         let canJump = false;
+
+        const normalSpeed = 40.0;
+        const sprintSpeed = 70.0;
+        const slowdownSpeed = 10.0;
+
+        const gravity = 9.8;
 
         let prevTime = performance.now();
 
-        const height = 0.5;
+        const charHeight = 0.6;
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
         const vertex = new THREE.Vector3();
         const color = new THREE.Color();
 
-        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, height );
+        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, charHeight );
         // Raycaster helper
 
         // begining position
-        var sunAngle = -1/6*Math.PI*2;
+        var sunAngle = 1/6*Math.PI*2;
+        var lightsOn = false;
+        var windowLightIntensity = 0;
         // the day duraction in seconds
         var dayDuration	= 30
 
@@ -511,8 +613,82 @@
 
             const time = performance.now();
             const delta = ( time - prevTime ) / 1000;
+
+            var phase	= THREEx.DayNight.currentPhase(sunAngle)
+
+            // Street lights
+            if (phase === 'twilight' && lightsOn == false) {
+                // Turning lights on
+                for (var i in streetLights) {
+                    streetLights[i].visible = true;
+                }
+                for (var i in streetLightBoxes) {
+                    streetLightBoxes[i].material.emissiveIntensity = 1;
+                }
+                for (var i in sceneElements.sceneGraph.getObjectByName('Map').children) {
+                    var obj = sceneElements.sceneGraph.getObjectByName('Map').children[i];
+
+                    if (obj.name.startsWith('low') || obj.name.startsWith('small') || obj.name.startsWith('large') || obj.name.startsWith('skyscraper')) {
+                        for (var i in obj.material) {
+                            if (obj.material[i].name.startsWith('window')) {
+                                obj.material[i].emissive.set(0xffffff);
+                                windowLightIntensity += 0.0001;
+                                obj.material[i].emissiveIntensity = windowLightIntensity;
+                            }
+                        }
+                    }
+                }
+                if (windowLightIntensity > 0.5) {
+                    lightsOn = true;
+                }
+            } else if (phase === 'day' && lightsOn == true) {
+                // Turning lights off
+                for (var i in streetLights) {
+                    streetLights[i].visible = false;
+                }
+                for (var i in streetLightBoxes) {
+                    streetLightBoxes[i].material.emissiveIntensity = 0.25;
+                }
+
+                for (var i in sceneElements.sceneGraph.getObjectByName('Map').children) {
+                    var obj = sceneElements.sceneGraph.getObjectByName('Map').children[i];
+
+                    if (obj.name.startsWith('low') || obj.name.startsWith('small') || obj.name.startsWith('large') || obj.name.startsWith('skyscraper')) {
+                        for (var i in obj.material) {
+                            if (obj.material[i].name.startsWith('window')) {
+                                if (windowLightIntensity - 0.0001 < 0) {
+                                    windowLightIntensity = 0;
+                                } else {
+                                    windowLightIntensity -= 0.0001;
+                                }
+                                obj.material[i].emissiveIntensity = windowLightIntensity;
+                            }
+                        }
+                    }
+                }
+                if (windowLightIntensity == 0) {
+                    lightsOn = false;
+                }
+            }
+
+            // Car Animation
+            var car = sceneElements.sceneGraph.getObjectByName('Sedan');
+            const carVelocity = 7;
+            car.position.z += carVelocity * delta;
+
+            if (car.position.z > 29) {
+                car.position.z = -30;
+            }
+
+            // Wheel rotation
+            //for (var i in wheels) {
+            //    console.log(wheels);
+            //    console.log(wheels[i]);
+            //    wheels[i].children[0].rotation.x += carVelocity * delta;
+            //}
             
-            if ( controls.fps.isLocked === true ) {
+            // FP Controls
+            if ( controls.fps.isLocked === true && sceneElements.camera == cameras.firstperson ) {
                 raycaster.ray.origin.copy( controls.fps.getObject().position );
                 
                 const intersects = [];
@@ -542,23 +718,24 @@
                         }
                     }
 
-                    if ( distance > 1 && distance < height ) {
-                        controls.fps.getObject().position.y += (height - distance);
+                    if ( distance > 3*charHeight/4 && distance < charHeight ) {
+                        controls.fps.getObject().position.y += (charHeight - distance);
                     }
                 }
+
                 const onObject = intersects.length > 0;
 
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.x -= velocity.x * slowdownSpeed * delta;
+                velocity.z -= velocity.z * slowdownSpeed * delta;
 
-                velocity.y -= 9.8 * 5.0 * delta; // 100.0 = mass
+                velocity.y -= gravity * 3.0 * delta; // 100.0 = mass
 
                 direction.z = Number( moveForward ) - Number( moveBackward );
                 direction.x = Number( moveRight ) - Number( moveLeft );
                 direction.normalize(); // this ensures consistent movements in all directions
 
-                if ( moveForward || moveBackward ) velocity.z -= direction.z * 20.0 * delta;
-                if ( moveLeft || moveRight ) velocity.x -= direction.x * 20.0 * delta;
+                if ( moveForward || moveBackward ) velocity.z -= direction.z * (sprint ? sprintSpeed : normalSpeed) * delta;
+                if ( moveLeft || moveRight ) velocity.x -= direction.x * (sprint ? sprintSpeed : normalSpeed) * delta;
 
                 if ( onObject === true ) {
 
@@ -572,20 +749,19 @@
 
                 controls.fps.getObject().position.y += ( velocity.y * delta ); // new behavior
 
-                if ( controls.fps.getObject().position.y < 1.1 ) {
+                if ( controls.fps.getObject().position.y < 0 ) {
 
                     velocity.y = 0;
-                    controls.fps.getObject().position.y = 1.1;
+                    controls.fps.getObject().position.y = 0;
 
                     canJump = true;
 
                 }
 
-                console.log(canJump);
             }
 
             sunAngle += delta/dayDuration * Math.PI*2;
-            daynight.starField.update(sunAngle);
+            //daynight.starField.update(sunAngle);
             daynight.skydom.update(sunAngle);
             daynight.sunLight.update(sunAngle);
             daynight.sunSphere.update(sunAngle);
@@ -664,8 +840,19 @@
                     moveRight = true;
                     break;
 
+                case 'ShiftLeft':
+                    sprint = true;
+                    break;
+
                 case 'Space':
-                    if ( canJump === true ) velocity.y += 25;
+                    if ( canJump === true ) {
+                        velocity.y = 10;
+                        canDoubleJump = true;
+                    }
+                    else if ( canDoubleJump === true ) {
+                        velocity.y = 10;
+                        canDoubleJump = false;
+                    }
                     canJump = false;
                     break;
 
@@ -680,15 +867,11 @@
                         console.log( "Orthographic Camera" );
 
                         sceneElements.camera = cameras.orthographic;
-                        sceneElements.sceneGraph.remove( stands.cityTower );
-                        sceneElements.sceneGraph.add( stands.cityPlane );
                     }
                     else if (sceneElements.camera == cameras.orthographic) {
                         console.log( "First Person Camera" );
 
                         sceneElements.camera = cameras.firstperson;
-                        sceneElements.sceneGraph.remove( stands.cityPlane );
-                        sceneElements.sceneGraph.add( stands.cityTower );
                         controls.fps.connect(); controls.fps.lock();
                         controls.per.enabled = false; controls.ort.enabled = false;
                     }
@@ -731,6 +914,10 @@
                 case 'ArrowRight':
                 case 'KeyD':
                     moveRight = false;
+                    break;
+
+                case 'ShiftLeft':
+                    sprint = false;
                     break;
 
             }

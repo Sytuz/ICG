@@ -64,12 +64,29 @@ THREEx.DayNight.StarField	= function(){
 
 THREEx.DayNight.SunLight	= function(){
 	var light	= new DirectionalLight( 0xffffff, 1 );
+	light.castShadow = true;
+	var distance = 400;
+	var square = 30;
+	light.shadow.camera.near = distance-square;
+	light.shadow.camera.far = distance+square;
+	light.shadow.camera.left = -square;
+	light.shadow.camera.right = square;
+	light.shadow.camera.top = square;
+	light.shadow.camera.bottom = -square;
+
+	light.shadow.mapSize.width = 2048;
+	light.shadow.mapSize.height = 2048;
+
+	light.shadow.camera.updateProjectionMatrix();
+
 	this.object3d	= light
 	
 	this.update	= function(sunAngle){
 		light.position.x = 0;
-		light.position.y = Math.sin(sunAngle) * 90000;
-		light.position.z = Math.cos(sunAngle) * 90000;
+		light.position.y = Math.sin(sunAngle) * distance;
+		light.position.z = Math.cos(sunAngle) * distance;
+		//light.shadow.camera.updateProjectionMatrix();
+		
 // console.log('Phase ', THREEx.DayNight.currentPhase(sunAngle))
 
 		var phase	= THREEx.DayNight.currentPhase(sunAngle)
