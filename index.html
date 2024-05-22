@@ -603,7 +603,6 @@
         // begining position
         var sunAngle = 1/6*Math.PI*2;
         var lightsOn = false;
-        var windowLightIntensity = 0;
         // the day duraction in seconds
         var dayDuration	= 30
 
@@ -632,15 +631,12 @@
                         for (var i in obj.material) {
                             if (obj.material[i].name.startsWith('window')) {
                                 obj.material[i].emissive.set(0xffffff);
-                                windowLightIntensity += 0.0001;
-                                obj.material[i].emissiveIntensity = windowLightIntensity;
+                                obj.material[i].emissiveIntensity = 0.6;
                             }
                         }
                     }
                 }
-                if (windowLightIntensity > 0.5) {
-                    lightsOn = true;
-                }
+                lightsOn = true;
             } else if (phase === 'day' && lightsOn == true) {
                 // Turning lights off
                 for (var i in streetLights) {
@@ -656,19 +652,12 @@
                     if (obj.name.startsWith('low') || obj.name.startsWith('small') || obj.name.startsWith('large') || obj.name.startsWith('skyscraper')) {
                         for (var i in obj.material) {
                             if (obj.material[i].name.startsWith('window')) {
-                                if (windowLightIntensity - 0.0001 < 0) {
-                                    windowLightIntensity = 0;
-                                } else {
-                                    windowLightIntensity -= 0.0001;
-                                }
-                                obj.material[i].emissiveIntensity = windowLightIntensity;
+                                obj.material[i].emissiveIntensity = 0;
                             }
                         }
                     }
                 }
-                if (windowLightIntensity == 0) {
-                    lightsOn = false;
-                }
+                lightsOn = false;
             }
 
             // Car Animation
