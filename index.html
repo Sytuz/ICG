@@ -34,12 +34,11 @@
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
-        import { VOXLoader, VOXMesh } from 'three/addons/loaders/VOXLoader.js';
 
-        // The day-night cycle comes from an extension available here: https://github.com/jeromeetienne/threex.daynight
+        /* -- The day-night cycle comes from an extension available here: https://github.com/jeromeetienne/threex.daynight -- */
         import { THREEx } from 'three/addons/other/DayNightCycle.js';
 
-        // To store the scene graph, and elements useful to rendering the scene
+        /* -- Useful constants -- */
         const sceneElements = {
             sceneGraph: null,
             camera: null,
@@ -59,11 +58,6 @@
             fps: null,
         };
 
-        const stands = {
-            cityTower: null,
-            cityPlane: null,
-        };
-
         const daynight = {
             sunSphere: null,
             sunLight: null,
@@ -71,13 +65,15 @@
             starField: null,
         };
 
-        const wheels = [];
+        const ortScale = 80;
 
+        /* -- Variables to store streetlight components -- */
         var streetLightBoxes = [];
         var streetLights = [];
         
-        // The positions correspond to the blender coordinates
-        // z axis is simetrical in comparison to the blender coordinates (Threejs z = Blender -y)
+        /* -- Constants that store information about the streetlight positions and scale, relative to blender -- */
+        /* -- The z axis is simetrical in comparison to the blender coordinates (Threejs z = Blender -y)     -- */
+        /* -- The offset is used to center the streetlight box into the right place                         -- */
         const scale = 3;
         const offset = 0.5;
         const streetLightPositions = [
@@ -127,6 +123,7 @@
             { x: 8.95, y: 2, z: -3, rotation: 0 },
         ]
 
+        /* -- Apply the scale and offset to each streetlight position -- */
         for (var i in streetLightPositions) {
             streetLightPositions[i].x *= scale;
             streetLightPositions[i].z *= scale;
@@ -142,13 +139,12 @@
             }
         }
 
-        // Models
-
+        /* -- Models -- */
         const models = [
             {
                 name: "Map",
-                path: "models/untitled.obj",
-                mtl: "models/untitled.mtl",
+                path: "models/NightCity/NightCity.obj",
+                mtl: "models/NightCity/NightCity.mtl",
             },
             {
                 name: "Sedan",
@@ -157,12 +153,7 @@
             },
         ]
 
-        // Useful constants
-
-        const ortScale = 80 // Orthographic camera constant, to define the viewing box
-
-        // HELPER FUNCTIONS
-
+        /* -- Function to create a streetlight -- */
         function createLight(params) {
             const lightGeometry = new THREE.BoxGeometry( 0.13, 0.05, 0.12 );
             const lightMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff } );
@@ -191,20 +182,15 @@
             sceneElements.sceneGraph.add( spotLight.target );
         }
 
+        /* -- Helper function, to facilitate setup and rendering -- */
         const helper = {
 
             initEmptyScene: function (sceneElements) {
 
-                // ************************** //
-                // Create the 3D scene
-                // ************************** //
+                /* -- Setup the scene -- */
                 sceneElements.sceneGraph = new THREE.Scene();
-                //sceneElements.sceneGraph.fog = new THREE.Fog( 0xffffff, 0, 750 );
 
-
-                // ************************** //
-                // Create the perspective camera and set it as the default camera
-                // ************************** //
+                /* -- Setup the perspective camera (default) -- */
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const aspectRatio = width / height;
@@ -213,131 +199,54 @@
                 perCamera.position.set( 30, 18, 30 );
                 perCamera.lookAt( 0, 5, 0 );
 
-                // ************************** //
-                // Create the orthographic camera
-                // ************************** //
+                sceneElements.camera = perCamera;
+
+                /* -- Setup the orthographic camera -- */
                 const ortCamera = new THREE.OrthographicCamera( width / -ortScale, width / ortScale, height / ortScale, height / -ortScale, 0.5, 1000 );
                 cameras.orthographic = ortCamera;
                 ortCamera.position.set( 30, 18, 30 );
                 ortCamera.lookAt( 0, 5, 0 );
 
-
-                // ************************** //
-                // Create the first person camera
-                // ************************** //
+                /* -- Setup the first person camera -- */
                 const fpsCamera = new THREE.PerspectiveCamera( 75, aspectRatio, 0.1, 1000 );
                 fpsCamera.position.set( 2, 10, 0 );
                 cameras.firstperson = fpsCamera;
-
-
-                // Set the default camera
-                sceneElements.camera = perCamera;
                 
-
-                // -------------------------- //
-                // Illumination
-                // -------------------------- //
-
-                // ************************** //
-                // Add ambient light
-                // ************************** //
+                /* -- Ambient light -- */
                 const ambientLight = new THREE.AmbientLight( 'rgb(214, 220, 227)', 0.05 );
                 sceneElements.sceneGraph.add( ambientLight );
 
+                /* -- Day-night cycle objects -- */
+                daynight.sunSphere	= new THREEx.DayNight.SunSphere( );
+                sceneElements.sceneGraph.add( daynight.sunSphere.object3d );
 
-                // ************************** //
-                // Add directional light (with shadows), to simulate the moon light
-                // ************************** //
-
-                //const moonlight = new THREE.DirectionalLight('rgb(255, 255, 255)', 0.3);
-                //moonlight.position.set( 100, 100, 0 );
-                //moonlight.castShadow = true;
-
-                //Set up shadow properties for the light
-
-                //const b = 20;
-
-                //moonlight.shadow.camera.left = - b;
-                //moonlight.shadow.camera.right = b;
-                //moonlight.shadow.camera.top = b;
-                //moonlight.shadow.camera.bottom = - b;
-
-                //moonlight.shadow.mapSize.width = 2048;
-                //moonlight.shadow.mapSize.height = 2048;
-                //moonlight.shadow.camera.near = 130; // default
-                //moonlight.shadow.camera.far = 150; // default
-
-                //sceneElements.sceneGraph.add(moonlight);
-                //sceneElements.sceneGraph.add( new THREE.CameraHelper( moonlight.shadow.camera ) );
-
-                // ***************************** //
-                // Day-night cycle
-                // ***************************** //
-
-                daynight.sunSphere	= new THREEx.DayNight.SunSphere()
-                sceneElements.sceneGraph.add( daynight.sunSphere.object3d )
-
-                daynight.sunLight	= new THREEx.DayNight.SunLight()
-                sceneElements.sceneGraph.add( daynight.sunLight.object3d )
+                daynight.sunLight	= new THREEx.DayNight.SunLight( );
+                sceneElements.sceneGraph.add( daynight.sunLight.object3d );
                 
-                daynight.skydom	= new THREEx.DayNight.Skydom()
-                sceneElements.sceneGraph.add( daynight.skydom.object3d )
-
-                //daynight.starField	= new THREEx.DayNight.StarField()
-                //sceneElements.sceneGraph.add( daynight.starField.object3d )
-
-                // ***************************** //
-                // Add point light souce (with shadows)
-                // ***************************** //
-                const light_1 = new THREE.PointLight( 'rgb(255, 255, 255)', 19 );
-                light_1.decay = 1;
-                light_1.position.set( 10, 10, 2 );
-                //sceneElements.sceneGraph.add( light_1 );
-
-                // Setup shadow properties for the point light
-                light_1.castShadow = true;
-                light_1.shadow.mapSize.width = 2048;
-                light_1.shadow.mapSize.height = 2048;
-
-                // Give a name to the light
-                light_1.name = "light 1";
+                daynight.skydom	= new THREEx.DayNight.Skydom( );
+                sceneElements.sceneGraph.add( daynight.skydom.object3d );
 
 
-                // *********************************** //
-                // Add skybox
-                // *********************************** //
-                //const loader = new THREE.CubeTextureLoader();
-                //loader.setPath( 'models/Skybox/' );
-//
-                //const textureCube = loader.load([
-                //'px.png', 'nx.png',
-                //'ny.png', 'py.png',
-                //'nz.png', 'pz.png'
-                //]);
-//
-                //sceneElements.sceneGraph.background = textureCube;
-
-                // Apply this material to your objects
+                /* -- Box placed at the bottom of the scene, to cover a black hole created by rendering issues -- */
                 const geometry = new THREE.BoxGeometry(1500, 10, 1500);
                 const mesh = new THREE.MeshStandardMaterial({ color: 0xCCCCCC });
                 const foggedObject = new THREE.Mesh(geometry, mesh);
                 foggedObject.position.set(0, -400, 0);
                 sceneElements.sceneGraph.add(foggedObject);
 
-                // Create street lights
+                /* -- Create the streetlights -- */
                 for (var i in streetLightPositions) {
                     createLight(streetLightPositions[i]);
                 }
+                console.log(streetLightBoxes.length);
 
-                // -------------------------- //
-                // Renderer
-                // -------------------------- //
+                /* -- Setup the renderer -- */
                 const renderer = new THREE.WebGLRenderer({ antialias: true });
                 sceneElements.renderer = renderer;
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setSize( width, height );
 
-                // Setup shadowMap property
+                /* -- Shadow mapping -- */
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap; //THREE.BasicShadowMap | THREE.PCFShadowMap |  THREE.VSMShadowMap | THREE.PCFSoftShadowMap
 
@@ -348,18 +257,12 @@
                 renderer.shadowMap.height = 2048;
 
 
-                // **************************************** //
-                // Add the rendered image in the HTML DOM
-                // **************************************** //
+                /* -- Add the rendered image in the HTML DOM -- */
                 const htmlElement = document.querySelector( "#Tag3DScene" );
                 htmlElement.appendChild( renderer.domElement );
 
 
-                // -------------------------- //
-                // Camera controls
-                // -------------------------- //
-
-                // Perpective camera
+                /* -- Perspective camera controls (OrbitControls) (default) -- */
                 controls.per = new OrbitControls( perCamera, renderer.domElement );
                 controls.per.screenSpacePanning = true;
                 controls.per.target.set(0, 5, 0);
@@ -370,7 +273,7 @@
 
                 sceneElements.control = controls.per;
 
-                // Orthographic camera
+                /* -- Orthographic camera controls (OrbitControls) -- */
                 controls.ort = new OrbitControls( ortCamera, renderer.domElement );
                 controls.ort.screenSpacePanning = true;
                 controls.ort.target.set( 0, 5, 0 );
@@ -379,12 +282,11 @@
 
                 controls.ort.update();
 
-                // First Person camera
-                
+                /* -- First person camera controls (PointerLockControls) -- */
                 controls.fps = new PointerLockControls( fpsCamera, renderer.domElement );
                 controls.fps.disconnect();
                 //controls.per.enabled = false; controls.ort.enabled = false;
-                controls.fps.connect(); controls.fps.lock(); controls.fps.isLocked === true;
+                //controls.fps.connect(); controls.fps.lock(); controls.fps.isLocked === true;
                 sceneElements.sceneGraph.add( controls.fps.getObject() );
             },
 
@@ -393,17 +295,12 @@
             },
         };
 
-        // FUNCTIONS FOR BUILDING THE SCENE
-
+        /* -- Scene loading functions -- */
         const scene = {
-
-            // Create and insert in the scene graph the models of the 3D scene
 
             load3DObjects: function ( sceneGraph ) {
 
-                // ************************** //
-                // Create the city plane
-                // ************************** //
+                /* -- Create the grass ground -- */
                 const loader = new THREE.TextureLoader();
                 const grassTexture = loader.load('./images/grass/grass_texture.png');
                 const displacementMap = loader.load('./images/grass/grass_displacement.png');
@@ -440,30 +337,23 @@
 
                 const otherMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color for the other sides
 
-                // Step 4: Create an array of materials, assigning the grass material to the upper face (index 4)
                 const materials = [
                 otherMaterial, // Right face
                 otherMaterial, // Left face
-                grassMaterial, // Front face (this is actually the upper face)
+                grassMaterial, // Top face 
                 otherMaterial, // Bottom face
-                otherMaterial,
+                otherMaterial, // Front face
                 otherMaterial, // Back face
                 ];
 
+                const groundGeometry = new THREE.BoxGeometry( 60, 1000, 60 );
+                const ground = new THREE.Mesh( groundGeometry, materials );
+                ground.position.set( 0, -500, 0 );
+                ground.receiveShadow = true;
 
-                const planeGeometry = new THREE.BoxGeometry( 60, 1000, 60 );
-                const planeMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(255,255,255)' });
-                const cityPlane = new THREE.Mesh( planeGeometry, materials );
-                cityPlane.position.set( 0, -500, 0 );
-                cityPlane.receiveShadow = true;
-                cityPlane.name = "cityPlane";
-                stands.cityPlane = cityPlane;
+                sceneGraph.add( ground );
 
-                sceneGraph.add( cityPlane );
-
-                // ************************** //
-                // Setting up a loading manager
-                // ************************** //
+                /* -- Setting up a loading manager -- */
                 const manager = new THREE.LoadingManager();
                 manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
                     console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
@@ -481,14 +371,11 @@
                     console.log( 'There was an error loading ' + url );
                 };
 
-                // ************************** //
-                // Load a OBJ model
-                // ************************** //
+                /* -- Load the models -- */
                 const mtlLoader = new MTLLoader( manager );
 
                 const loadingPromises = [];
 
-                // For every OBJ model in the directory, load the corresponding MTL file
                 models.forEach(model => {
                     const promise = new Promise((resolve, reject) => {
                         mtlLoader.load(
@@ -510,31 +397,14 @@
                                         object.receiveShadow = true;
                                         object.castShadow = true;
                                         object.name = model.name;
-                                        if (model.name == "Map") {
-                                            object.scale.set( 3, 3, 3 );
-                                            object.position.set( 0, 0.05, 0 );
-                                            sceneGraph.add( object );
-                                        }
-                                        else if (model.name == "Sedan") {
-                                            var textureLoader = new THREE.TextureLoader();
-                                            var texture = textureLoader.load( 'models/Cars/colormap.png' );
-                                            object.traverse( function ( child ) {
-                                                if ( child instanceof THREE.Mesh ) {
-                                                    child.material.map = texture;
-                                                }
-                                            });
-                                            object.scale.set( 0.5, 0.5, 0.5 );
-                                            object.position.set( -14, 0.05, -29 );
-                                            sceneGraph.add( object );
-                                        }
-                                        
-                                        resolve();
 
-                                        // Setup model
-                                        scene.setup( object )
+                                        scene.setup( object );   
+                                        sceneGraph.add( object );
+
+                                        resolve();
                                     },
                                     (xhr) => {
-                                        console.log( model.name + ' - ' + ( xhr.loaded / xhr.total ) * 43333333330 + '% loaded' )
+                                        console.log( model.name + ' - ' + ( xhr.loaded / xhr.total ) * 100 + '% loaded' )
                                     },
                                     (error) => {
                                         console.log( model.name + ' - ' + 'An error happened' ); 
@@ -560,19 +430,18 @@
 
                 console.log( obj.name );
                 
-                // ************************** //
-                // Setup models
-                // ************************** //
-
-
+                if (obj.name == "Map") {
+                    obj.scale.set( scale, scale, scale );
+                    obj.position.set( 0, 0.01, 0 );
+                }
+                else if (obj.name == "Sedan") {
+                    obj.scale.set( 0.5, 0.5, 0.5 );
+                    obj.position.set( -14, 0.05, -29 );
+                }
             }
         };
 
-        // ANIMATION
-        
-
-        // Animation functions
-
+        /* -- Animation variables and constants -- */
         let raycaster;
 
         let moveForward = false;
@@ -598,26 +467,22 @@
         const color = new THREE.Color();
 
         raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, charHeight );
-        // Raycaster helper
 
-        // begining position
         var sunAngle = 1/6*Math.PI*2;
         var lightsOn = false;
-        // the day duraction in seconds
-        var dayDuration	= 30
+        var dayDuration	= 60;
 
         function computeFrame() {
-            //sceneElements.sceneGraph.add( new THREE.ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 2, 0xff0000 ) );
-            // FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html
+            /* -- FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html -- */
 
             const time = performance.now();
             const delta = ( time - prevTime ) / 1000;
 
             var phase	= THREEx.DayNight.currentPhase(sunAngle)
 
-            // Street lights
+            /* -- Streetlights -- */
             if (phase === 'twilight' && lightsOn == false) {
-                // Turning lights on
+                /* -- Turning lights on -- */
                 for (var i in streetLights) {
                     streetLights[i].visible = true;
                 }
@@ -635,10 +500,11 @@
                             }
                         }
                     }
+                    console.log(i);
                 }
                 lightsOn = true;
             } else if (phase === 'day' && lightsOn == true) {
-                // Turning lights off
+                /* -- Turning lights off -- */
                 for (var i in streetLights) {
                     streetLights[i].visible = false;
                 }
@@ -660,7 +526,7 @@
                 lightsOn = false;
             }
 
-            // Car Animation
+            /* -- Car movement -- */
             var car = sceneElements.sceneGraph.getObjectByName('Sedan');
             const carVelocity = 7;
             car.position.z += carVelocity * delta;
@@ -668,15 +534,8 @@
             if (car.position.z > 29) {
                 car.position.z = -30;
             }
-
-            // Wheel rotation
-            //for (var i in wheels) {
-            //    console.log(wheels);
-            //    console.log(wheels[i]);
-            //    wheels[i].children[0].rotation.x += carVelocity * delta;
-            //}
             
-            // FP Controls
+            /* -- FPS Controls -- */
             if ( controls.fps.isLocked === true && sceneElements.camera == cameras.firstperson ) {
                 raycaster.ray.origin.copy( controls.fps.getObject().position );
                 
@@ -748,27 +607,23 @@
                 }
 
             }
-
+            
+            /* -- Day-night cycle -- */
             sunAngle += delta/dayDuration * Math.PI*2;
-            //daynight.starField.update(sunAngle);
             daynight.skydom.update(sunAngle);
             daynight.sunLight.update(sunAngle);
             daynight.sunSphere.update(sunAngle);
 
-            // Model animations
-
-            //crosswalkLights(time);
-
             prevTime = time;
 
-            // Rendering
+            /* -- Render the scene -- */
             helper.render( sceneElements );
 
-            // Animation
-            // Call for the next frame
+            /* -- Request the next frame -- */
             requestAnimationFrame( computeFrame );
         }
 
+        /* -- Initialization function -- */
         function init() {
             helper.initEmptyScene( sceneElements );
             scene.load3DObjects( sceneElements.sceneGraph ).then(() => {
@@ -776,16 +631,13 @@
             });
         }
 
-        // HANDLING EVENTS
+        /* -- Event listeners -- */
 
-        // Event Listeners
-
-        // Update render image size and camera aspect when the window is resized
+        /* -- Resize the window -- */
         function resizeWindow( eventParam ) {
             const width = window.innerWidth;
             const height = window.innerHeight;
 
-            // Perspective camera
             if (sceneElements.camera.isPerspectiveCamera) {
                 sceneElements.camera.aspect = width / height;
                 sceneElements.camera.updateProjectionMatrix();            
@@ -800,11 +652,9 @@
             sceneElements.renderer.setSize( width, height );
 
             helper.render( sceneElements );
-
-            // Comment when doing animation
-            // computeFrame(sceneElements);
         }
 
+        /* -- Keyboard events -- */
         const onKeyDown = function ( event ) {
 
             switch ( event.code ) {
@@ -917,7 +767,7 @@
         document.addEventListener( 'keydown', onKeyDown );
         document.addEventListener( 'keyup', onKeyUp );
 
-        // STARTING
+        /* -- Start the application -- */
         init();
 
     </script>
