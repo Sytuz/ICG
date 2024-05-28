@@ -70,6 +70,9 @@
         /* -- Variables to store streetlight components -- */
         var streetLightBoxes = [];
         var streetLights = [];
+
+        /* -- Variable to store windows -- */
+        var windows = [];
         
         /* -- Constants that store information about the streetlight positions and scale, relative to blender -- */
         /* -- The z axis is simetrical in comparison to the blender coordinates (Threejs z = Blender -y)     -- */
@@ -433,6 +436,20 @@
                 if (obj.name == "Map") {
                     obj.scale.set( scale, scale, scale );
                     obj.position.set( 0, 0.01, 0 );
+
+                    for (var i in obj.children) {
+                        var child = obj.children[i];
+
+                        if (child.name.startsWith('low') || child.name.startsWith('small') || child.name.startsWith('large') || child.name.startsWith('skyscraper')) {
+                            for (var i in child.material) {
+                                if (child.material[i].name.startsWith('window')) {
+                                    child.material[i].emissive.set(0xffffff);
+                                    child.material[i].emissiveIntensity = 0;
+                                    windows.push(child.material[i]);
+                                }
+                            }
+                        }
+                    }
                 }
                 else if (obj.name == "Sedan") {
                     obj.scale.set( 0.5, 0.5, 0.5 );
@@ -458,8 +475,6 @@
 
         const gravity = 9.8;
 
-        let prevTime = performance.now();
-
         const charHeight = 0.6;
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
@@ -472,6 +487,22 @@
         var lightsOn = false;
         var dayDuration	= 60;
 
+        let prevTime = performance.now();
+
+        async function updateLights(turnOn) {
+            for (var i in streetLights) {
+                streetLights[i].visible = turnOn;
+            }
+            for (var i in streetLightBoxes) {
+                streetLightBoxes[i].material.emissiveIntensity = turnOn ? 1 : 0.25;
+            }
+
+            for (var i in windows) {
+               
+                windows[i].emissiveIntensity = turnOn ? 0.6 : 0;
+            }
+        }
+
         function computeFrame() {
             /* -- FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html -- */
 
@@ -481,48 +512,13 @@
             var phase	= THREEx.DayNight.currentPhase(sunAngle)
 
             /* -- Streetlights -- */
-            if (phase === 'twilight' && lightsOn == false) {
+            if ((phase === 'twilight' || phase === 'night') && !lightsOn) {
                 /* -- Turning lights on -- */
-                for (var i in streetLights) {
-                    streetLights[i].visible = true;
-                }
-                for (var i in streetLightBoxes) {
-                    streetLightBoxes[i].material.emissiveIntensity = 1;
-                }
-                for (var i in sceneElements.sceneGraph.getObjectByName('Map').children) {
-                    var obj = sceneElements.sceneGraph.getObjectByName('Map').children[i];
-
-                    if (obj.name.startsWith('low') || obj.name.startsWith('small') || obj.name.startsWith('large') || obj.name.startsWith('skyscraper')) {
-                        for (var i in obj.material) {
-                            if (obj.material[i].name.startsWith('window')) {
-                                obj.material[i].emissive.set(0xffffff);
-                                obj.material[i].emissiveIntensity = 0.6;
-                            }
-                        }
-                    }
-                    console.log(i);
-                }
+                updateLights(true);
                 lightsOn = true;
-            } else if (phase === 'day' && lightsOn == true) {
+            } else if (phase === 'day' && lightsOn) {
                 /* -- Turning lights off -- */
-                for (var i in streetLights) {
-                    streetLights[i].visible = false;
-                }
-                for (var i in streetLightBoxes) {
-                    streetLightBoxes[i].material.emissiveIntensity = 0.25;
-                }
-
-                for (var i in sceneElements.sceneGraph.getObjectByName('Map').children) {
-                    var obj = sceneElements.sceneGraph.getObjectByName('Map').children[i];
-
-                    if (obj.name.startsWith('low') || obj.name.startsWith('small') || obj.name.startsWith('large') || obj.name.startsWith('skyscraper')) {
-                        for (var i in obj.material) {
-                            if (obj.material[i].name.startsWith('window')) {
-                                obj.material[i].emissiveIntensity = 0;
-                            }
-                        }
-                    }
-                }
+                updateLights(false);
                 lightsOn = false;
             }
 
