@@ -460,7 +460,13 @@
         };
 
         /* -- Animation variables and constants -- */
-        let raycaster;
+
+        let rcGround;
+        let rcTop;
+        let rcFront;
+        let rcBack;
+        let rcLeft;
+        let rcRight;
 
         let moveForward = false;
         let moveBackward = false;
@@ -482,7 +488,14 @@
         const vertex = new THREE.Vector3();
         const color = new THREE.Color();
 
-        raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, charHeight );
+        rcGround = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, charHeight );
+        rcTop = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 1, 0 ), 0, 0.1 );
+
+        const sideRay = 0.2;
+        rcFront = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, 1 ), 0, sideRay );
+        rcBack = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, 0, -1 ), 0, sideRay );
+        rcLeft = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( -1, 0, 0 ), 0, sideRay );
+        rcRight = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 1, 0, 0 ), 0, sideRay );
 
         var sunAngle = 1/6*Math.PI*2;
         var lightsOn = false;
@@ -503,6 +516,27 @@
                 windows[i].emissiveIntensity = turnOn ? 0.6 : 0;
             }
         }
+
+        function intersectObjects( raycaster ) {
+            const intersects = [];
+                var temp;
+                for (var i in sceneElements.sceneGraph.children) {
+                    if (sceneElements.sceneGraph.children[i] instanceof THREE.Group) {
+                        temp = raycaster.intersectObjects(sceneElements.sceneGraph.children[i].children, true);
+                        if (temp.length > 0) {
+                            intersects.push(...temp);
+                        }
+                    } else if (sceneElements.sceneGraph.children[i] instanceof THREE.Mesh) {
+                        temp = raycaster.intersectObject(sceneElements.sceneGraph.children[i]);
+                        if (temp.length > 0) {
+                            intersects.push(...temp);
+                        }
+                    }
+                }
+            
+            return intersects;
+        }
+
 
         function computeFrame() {
             /* -- FPS Controls adapted from https://threejs.org/examples/misc_controls_pointerlock.html -- */
@@ -534,36 +568,23 @@
             
             /* -- FPS Controls -- */
             if ( controls.fps.isLocked === true && sceneElements.camera == cameras.firstperson ) {
-                raycaster.ray.origin.copy( controls.fps.getObject().position );
+                rcGround.ray.origin.copy( controls.fps.getObject().position );
                 
-                const intersects = [];
-                var temp;
-                for (var i in sceneElements.sceneGraph.children) {
-                    if (sceneElements.sceneGraph.children[i] instanceof THREE.Group) {
-                        temp = raycaster.intersectObjects(sceneElements.sceneGraph.children[i].children, true);
-                        if (temp.length > 0) {
-                            intersects.push(...temp);
-                        }
-                    } else if (sceneElements.sceneGraph.children[i] instanceof THREE.Mesh) {
-                        temp = raycaster.intersectObject(sceneElements.sceneGraph.children[i]);
-                        if (temp.length > 0) {
-                            intersects.push(...temp);
-                        }
-                    }
-                }
+                /* -- Ground collision -- */
+                let groundIntersects = intersectObjects( rcGround );
 
+                /* -- Step up -- */
+                if ( groundIntersects.length > 0 ) {
 
-                if ( intersects.length > 0 ) {
-
-                    var distance = intersects[0].distance;
+                    var distance = groundIntersects[0].distance;
                     if ( distance == undefined ) {
                         distance = 1000;
-                        console.log(intersects[0])
+                        console.log(groundIntersects[0])
                     }
                     
-                    for ( let i = 1; i < intersects.length; i ++ ) {
-                        if ( intersects[i].distance < distance && intersects[i].distance != undefined) {
-                            distance = intersects[i].distance;
+                    for ( let i = 1; i < groundIntersects.length; i ++ ) {
+                        if ( groundIntersects[i].distance < distance && groundIntersects[i].distance != undefined) {
+                            distance = groundIntersects[i].distance;
                         }
                     }
 
@@ -572,7 +593,16 @@
                     }
                 }
 
-                const onObject = intersects.length > 0;
+                /* -- Top collision -- */
+                rcTop.ray.origin.copy( controls.fps.getObject().position );
+
+                let topIntersects = intersectObjects( rcTop );
+
+                if ( topIntersects.length > 0 ) {
+                    velocity.y = 0;
+                }
+
+                const onObject = groundIntersects.length > 0;
 
                 velocity.x -= velocity.x * slowdownSpeed * delta;
                 velocity.z -= velocity.z * slowdownSpeed * delta;
@@ -586,6 +616,51 @@
                 if ( moveForward || moveBackward ) velocity.z -= direction.z * (sprint ? sprintSpeed : normalSpeed) * delta;
                 if ( moveLeft || moveRight ) velocity.x -= direction.x * (sprint ? sprintSpeed : normalSpeed) * delta;
 
+                /* -- Front collision -- */
+                rcFront.ray.origin.copy( controls.fps.getObject().position );
+                rcFront.ray.origin.y -= 1*charHeight/4;
+
+                let frontIntersects = intersectObjects( rcFront );
+
+                if ( frontIntersects.length > 0 ) {
+                    velocity.z = 0;
+                    controls.fps.getObject().position.z += frontIntersects[0].distance - sideRay;
+                }
+
+                /* -- Back collision -- */
+                rcBack.ray.origin.copy( controls.fps.getObject().position );
+                rcBack.ray.origin.y -= 1*charHeight/4;
+
+                let backIntersects = intersectObjects( rcBack );
+
+                if ( backIntersects.length > 0 ) {
+                    velocity.z = 0;
+                    controls.fps.getObject().position.z -= backIntersects[0].distance - sideRay;
+                }
+
+                /* -- Left collision -- */
+                rcLeft.ray.origin.copy( controls.fps.getObject().position );
+                rcLeft.ray.origin.y -= 1*charHeight/4;
+
+                let leftIntersects = intersectObjects( rcLeft );
+
+                if ( leftIntersects.length > 0 ) {
+                    velocity.x = 0;
+                    controls.fps.getObject().position.x -= leftIntersects[0].distance - sideRay;
+                }
+
+                /* -- Right collision -- */
+                rcRight.ray.origin.copy( controls.fps.getObject().position );
+                rcRight.ray.origin.y -= 1*charHeight/4;
+
+                let rightIntersects = intersectObjects( rcRight );
+
+                if ( rightIntersects.length > 0 ) {
+                    velocity.x = 0;
+                    controls.fps.getObject().position.x += rightIntersects[0].distance - sideRay;
+                }
+
+                /* -- Jump logic -- */
                 if ( onObject === true ) {
 
                     velocity.y = Math.max( 0, velocity.y );
