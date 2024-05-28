@@ -607,6 +607,19 @@
 
                 }
 
+                if (Math.abs(controls.fps.getObject().position.x) > 30) {
+                    
+                    velocity.x = 0;
+                    controls.fps.getObject().position.x = controls.fps.getObject().position.x > 0 ? 30 : -30;
+
+                }
+
+                if (Math.abs(controls.fps.getObject().position.z) > 30) {
+                    
+                    velocity.z = 0;
+                    controls.fps.getObject().position.z = controls.fps.getObject().position.z > 0 ? 30 : -30;
+
+                }
             }
             
             /* -- Day-night cycle -- */
