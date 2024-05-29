@@ -127,6 +127,22 @@
             { x: 8.95, y: streetLightHeight, z: -3, rotation: 0 },
         ]
 
+        const parkedCars = [
+            /* -- 1st Row -- */
+            { x: 5.25, y: 0.05, z: 4.8, rotation: Math.PI/2 },
+            { x: 5.25, y: 0.05, z: 2.4, rotation: Math.PI/2 },
+            { x: 5.25, y: 0.05, z: 6.4, rotation: 3*Math.PI/2 },
+            /* -- 2nd Row -- */
+            { x: 6.25, y: 0.05, z: 4.4, rotation: Math.PI/2 },
+            { x: 6.25, y: 0.05, z: 6.4, rotation: 3*Math.PI/2 },
+            /* -- 3nd Row --*/
+            { x: 6.75, y: 0.05, z: 5.6, rotation: Math.PI/2 },
+            { x: 6.75, y: 0.05, z: 5.2, rotation: 3*Math.PI/2 },
+            { x: 6.75, y: 0.05, z: 3.2, rotation: 3*Math.PI/2 },
+            /* -- 4th Row -- */
+            { x: 7.75, y: 0.05, z: 4, rotation: Math.PI/2 },
+        ]
+
         /* -- Apply the scale and offset to each streetlight position -- */
         for (var i in streetLightPositions) {
             streetLightPositions[i].x *= scale;
@@ -455,6 +471,16 @@
                 else if (obj.name == "Sedan") {
                     obj.scale.set( 0.5, 0.5, 0.5 );
                     obj.position.set( -14, 0.05, -29 );
+
+                    let varCopy = obj.clone();
+                    varCopy.name = "SedanCopy";
+                    
+                    for (var i in parkedCars) {
+                        var parkedCar = varCopy.clone();
+                        parkedCar.position.set( parkedCars[i].x * scale, parkedCars[i].y, parkedCars[i].z * scale );
+                        parkedCar.rotation.y = parkedCars[i].rotation;
+                        sceneElements.sceneGraph.add( parkedCar );
+                    }
                 }
             }
         };
