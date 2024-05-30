@@ -23,5 +23,13 @@ This is a list of the features or improvements that were added to the project af
 
 ## [Project Page](https://sytuz.github.io/ICG/)
 
-## Authors
+## Author
 - Alexandre Ribeiro (108122)
+
+## Credits
+- [Three.js](https://threejs.org/)
+- [Blender](https://www.blender.org/)
+- [Kenney Assets](https://www.kenney.nl/)
+- [Day-Night Cycle (Altered by me, to add shadows and remove certain properties)](https://github.com/jeromeetienne/threex.daynight)
+- [First Person Controls (Heavily altered by me)](https://threejs.org/examples/misc_controls_pointerlock.html)
+- [Grass Texture](https://ambientcg.com/view?id=Grass003)

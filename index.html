@@ -127,21 +127,40 @@
             { x: 8.95, y: streetLightHeight, z: -3, rotation: 0 },
         ]
 
-        const parkedCars = [
+        const parkedSedans = [
             /* -- 1st Row -- */
-            { x: 5.25, y: 0.05, z: 4.8, rotation: Math.PI/2 },
             { x: 5.25, y: 0.05, z: 2.4, rotation: Math.PI/2 },
             { x: 5.25, y: 0.05, z: 6.4, rotation: 3*Math.PI/2 },
             /* -- 2nd Row -- */
-            { x: 6.25, y: 0.05, z: 4.4, rotation: Math.PI/2 },
             { x: 6.25, y: 0.05, z: 6.4, rotation: 3*Math.PI/2 },
             /* -- 3nd Row --*/
-            { x: 6.75, y: 0.05, z: 5.6, rotation: Math.PI/2 },
-            { x: 6.75, y: 0.05, z: 5.2, rotation: 3*Math.PI/2 },
             { x: 6.75, y: 0.05, z: 3.2, rotation: 3*Math.PI/2 },
             /* -- 4th Row -- */
             { x: 7.75, y: 0.05, z: 4, rotation: Math.PI/2 },
         ]
+
+        const parkedSUVs = [
+            /* -- 1st Row -- */
+            { x: 5.25, y: 0.05, z: 4.8, rotation: Math.PI/2 },
+            /* -- 2nd Row -- */
+            { x: 6.25, y: 0.05, z: 4.4, rotation: Math.PI/2 },
+            /* -- 3nd Row --*/
+            { x: 6.75, y: 0.05, z: 5.6, rotation: Math.PI/2 },
+        ]
+
+        const parkedLuxurySUVs = [
+            /* -- 3nd Row --*/
+            { x: 6.75, y: 0.05, z: 5.2, rotation: 3*Math.PI/2 },
+        ]
+
+        const parkedVans = [
+            /* -- 4th Row -- */
+            { x: 7.75, y: 0.05, z: 6.4, rotation: Math.PI/2 },
+        ]
+
+        const drivingCars = [];
+
+        var activeCar = 0;
 
         /* -- Apply the scale and offset to each streetlight position -- */
         for (var i in streetLightPositions) {
@@ -171,6 +190,21 @@
                 path: "models/Cars/sedan.obj",
                 mtl: "models/Cars/sedan.mtl",
             },
+            {
+                name: "SUV",
+                path: "models/Cars/suv.obj",
+                mtl: "models/Cars/suv.mtl",
+            },
+            {
+                name: "LuxurySUV",
+                path: "models/Cars/suv-luxury.obj",
+                mtl: "models/Cars/suv-luxury.mtl",
+            },
+            {
+                name: "Van",
+                path: "models/Cars/van.obj",
+                mtl: "models/Cars/van.mtl",
+            }
         ]
 
         /* -- Function to create a streetlight -- */
@@ -471,16 +505,70 @@
                 else if (obj.name == "Sedan") {
                     obj.scale.set( 0.5, 0.5, 0.5 );
                     obj.position.set( -14, 0.05, -29 );
+                    drivingCars.push(obj);        
 
                     let varCopy = obj.clone();
                     varCopy.name = "SedanCopy";
                     
-                    for (var i in parkedCars) {
+                    for (var i in parkedSedans) {
                         var parkedCar = varCopy.clone();
-                        parkedCar.position.set( parkedCars[i].x * scale, parkedCars[i].y, parkedCars[i].z * scale );
-                        parkedCar.rotation.y = parkedCars[i].rotation;
+                        parkedCar.position.set( parkedSedans[i].x * scale, parkedSedans[i].y, parkedSedans[i].z * scale );
+                        parkedCar.rotation.y = parkedSedans[i].rotation;
                         sceneElements.sceneGraph.add( parkedCar );
                     }
+
+                    activeCar = obj;
+                }
+                else if (obj.name == "SUV") {
+                    obj.scale.set( 0.5, 0.5, 0.5 );
+                    obj.position.set( -14, 0.05, -29 );
+                    drivingCars.push(obj);
+
+                    let varCopy = obj.clone();
+                    varCopy.name = "SUVCopy";
+                    
+                    for (var i in parkedSUVs) {
+                        var parkedCar = varCopy.clone();
+                        parkedCar.position.set( parkedSUVs[i].x * scale, parkedSUVs[i].y, parkedSUVs[i].z * scale );
+                        parkedCar.rotation.y = parkedSUVs[i].rotation;
+                        sceneElements.sceneGraph.add( parkedCar );
+                    }
+
+                    obj.visible = false;
+                }
+                else if (obj.name == "LuxurySUV") {
+                    obj.scale.set( 0.5, 0.5, 0.5 );
+                    obj.position.set( -14, 0.05, -29 );
+                    drivingCars.push(obj);
+
+                    let varCopy = obj.clone();
+                    varCopy.name = "LuxurySUVCopy";
+                    
+                    for (var i in parkedLuxurySUVs) {
+                        var parkedCar = varCopy.clone();
+                        parkedCar.position.set( parkedLuxurySUVs[i].x * scale, parkedLuxurySUVs[i].y, parkedLuxurySUVs[i].z * scale );
+                        parkedCar.rotation.y = parkedLuxurySUVs[i].rotation;
+                        sceneElements.sceneGraph.add( parkedCar );
+                    }
+
+                    obj.visible = false;
+                }
+                else if (obj.name == "Van") {
+                    obj.scale.set( 0.5, 0.5, 0.5 );
+                    obj.position.set( -14, 0.05, -29 );
+                    drivingCars.push(obj);
+
+                    let varCopy = obj.clone();
+                    varCopy.name = "VanCopy";
+                    
+                    for (var i in parkedVans) {
+                        var parkedCar = varCopy.clone();
+                        parkedCar.position.set( parkedVans[i].x * scale, parkedVans[i].y, parkedVans[i].z * scale );
+                        parkedCar.rotation.y = parkedVans[i].rotation;
+                        sceneElements.sceneGraph.add( parkedCar );
+                    }
+
+                    obj.visible = false;
                 }
             }
         };
@@ -526,6 +614,8 @@
         var sunAngle = 1/6*Math.PI*2;
         var lightsOn = false;
         var dayDuration	= 60;
+
+        const carVelocity = 7;
 
         let prevTime = performance.now();
 
@@ -584,12 +674,15 @@
             }
 
             /* -- Car movement -- */
-            var car = sceneElements.sceneGraph.getObjectByName('Sedan');
-            const carVelocity = 7;
-            car.position.z += carVelocity * delta;
+            
+            activeCar.position.z += carVelocity * delta;
 
-            if (car.position.z > 29) {
-                car.position.z = -30;
+            if (activeCar.position.z > 29) {
+                activeCar.position.z = -30;
+                // Select a random car in the cars array
+                activeCar.visible = false;
+                activeCar = drivingCars[Math.floor(Math.random()*drivingCars.length)];
+                activeCar.visible = true;
             }
             
             /* -- FPS Controls -- */
