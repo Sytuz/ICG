@@ -10,6 +10,7 @@ This Three.js web application is a 3D model of an urban city, with a focus on th
 - **Shift**: Sprint
 - **P**: Change camera
 - **R**: Reset cameras besides FPS
+- **H**: Show/Hide controls box
 
 ## What was added
 This is a list of the features or improvements that were added to the project after the final presentation:
@@ -23,6 +24,8 @@ This is a list of the features or improvements that were added to the project af
 - Added vehicle variety to the city, and the moving car has a chance to change its model
 - Added controls box to the screen, showing the player the controls
 - Added video to the project page, showing the project in action
+
+## [Project Repository](https://github.com/Sytuz/ICG)
 
 ## [Project Page](https://sytuz.github.io/ICG/)
 
