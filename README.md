@@ -20,8 +20,13 @@ This is a list of the features or improvements that were added to the project af
 - Added player collisions with the environment, so the player can't go through buildings or other elements
 - Added more decorations to the city, such as trees, rocks and a parking lot
 - Added this README file
+- Added vehicle variety to the city, and the moving car has a chance to change its model
+- Added controls box to the screen, showing the player the controls
+- Added video to the project page, showing the project in action
 
 ## [Project Page](https://sytuz.github.io/ICG/)
+
+## [Video](./videos/NightCityVideo.mp4)
 
 ## Author
 - Alexandre Ribeiro (108122)

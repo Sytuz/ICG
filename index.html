@@ -302,7 +302,7 @@
 
                 /* -- Shadow mapping -- */
                 renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap; //THREE.BasicShadowMap | THREE.PCFShadowMap |  THREE.VSMShadowMap | THREE.PCFSoftShadowMap
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
                 renderer.shadowMap.soft = true;
                 renderer.shadowMap.bias = -0.0001;
@@ -339,8 +339,6 @@
                 /* -- First person camera controls (PointerLockControls) -- */
                 controls.fps = new PointerLockControls( fpsCamera, renderer.domElement );
                 controls.fps.disconnect();
-                //controls.per.enabled = false; controls.ort.enabled = false;
-                //controls.fps.connect(); controls.fps.lock(); controls.fps.isLocked === true;
                 sceneElements.sceneGraph.add( controls.fps.getObject() );
             },
 
@@ -365,19 +363,19 @@
 
                 grassTexture.wrapS = THREE.RepeatWrapping;
                 grassTexture.wrapT = THREE.RepeatWrapping;
-                grassTexture.repeat.set(factor, factor); // Adjust these values to scale the texture as needed
+                grassTexture.repeat.set(factor, factor);
 
                 displacementMap.wrapS = THREE.RepeatWrapping;
                 displacementMap.wrapT = THREE.RepeatWrapping;
-                displacementMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+                displacementMap.repeat.set(factor, factor);
 
                 aoMap.wrapS = THREE.RepeatWrapping;
                 aoMap.wrapT = THREE.RepeatWrapping;
-                aoMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+                aoMap.repeat.set(factor, factor);
 
                 roughnessMap.wrapS = THREE.RepeatWrapping;
                 roughnessMap.wrapT = THREE.RepeatWrapping;
-                roughnessMap.repeat.set(factor, factor); // Adjust these values to match the grass texture
+                roughnessMap.repeat.set(factor, factor);
 
                 const grassMaterial = new THREE.MeshStandardMaterial({
                     map: grassTexture,
@@ -389,7 +387,7 @@
                     roughness: 0.5,
                 });
 
-                const otherMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown color for the other sides
+                const otherMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
 
                 const materials = [
                 otherMaterial, // Right face
@@ -906,7 +904,8 @@
                 case 'KeyR':
                     controls.per.reset();
                     controls.ort.reset();
-                    controls.fps.reset();
+                    controls.fps.getObject().position.set( 2, 10, 0 );
+                    velocity.set( 0, 0, 0 );
                     break;
                 
                 case 'KeyP':
@@ -984,6 +983,28 @@
 
 <body>
     <div id="Tag3DScene"> </div>
+
+    <div id="controlBox">
+        <p><b>WASD</b> to move player</p>
+        <p><b>Space</b> to jump</p>
+        <p><b>Shift</b> to sprint</p>
+        <p><b>P</b> to switch between cameras</p>
+        <p><b>R</b> to reset the camera</p>
+        <p><b>H</b> to hide/show this box</p>
+    </div>
+
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'h' || event.key === 'H') {
+                const controlBox = document.getElementById('controlBox');
+                if (controlBox.style.display === 'none') {
+                    controlBox.style.display = 'block';
+                } else {
+                    controlBox.style.display = 'none';
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
